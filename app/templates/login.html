@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <!-- Login Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="bi bi-shield-lock display-3 text-primary"></i>
+                    <h2 class="mt-3">Welcome to Campersion</h2>
+                    <p class="text-muted">Sign in to your account</p>
+                </div>
+
+                <!-- Email/Password Login Button -->
+                <div class="d-grid mb-3">
+                    <a href="{{ url_for('auth.email_login') }}"
+                       class="btn btn-primary btn-lg d-flex align-items-center justify-content-center">
+                        <i class="bi bi-envelope-fill me-2"></i>
+                        <span>Login with Email</span>
+                    </a>
+                </div>
+
+                <!-- Divider -->
+                <div class="position-relative my-4">
+                    <hr>
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted">
+                        or continue with
+                    </span>
+                </div>
+
+                <!-- OAuth Provider Buttons -->
+                <div class="d-grid gap-3">
+                    <!-- Google Login Button -->
+                    <a href="{{ url_for('auth.oauth_login', provider='google') }}"
+                       class="btn btn-outline-danger btn-lg d-flex align-items-center justify-content-center">
+                        <i class="bi bi-google me-2"></i>
+                        <span>Continue with Google</span>
+                    </a>
+
+                    <!-- Microsoft Login Button -->
+                    <a href="{{ url_for('auth.oauth_login', provider='microsoft') }}"
+                       class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center">
+                        <i class="bi bi-microsoft me-2"></i>
+                        <span>Continue with Microsoft</span>
+                    </a>
+                </div>
+
+                <!-- Registration Link -->
+                <div class="text-center mt-4">
+                    <p class="text-muted mb-0">
+                        Don't have an account?
+                        <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Create one</a>
+                    </p>
+                </div>
+
+                <!-- Security Note -->
+                <div class="alert alert-info mt-4 mb-0" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small>
+                        Your credentials are never stored on our servers.
+                        We use secure OAuth 2.0 authentication.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="text-center mt-4 text-muted">
+            <small>
+                By signing in, you can link multiple accounts (Google and Microsoft)
+                to the same user profile using your email address.
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
