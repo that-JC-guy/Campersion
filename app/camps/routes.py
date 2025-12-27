@@ -208,7 +208,7 @@ def request_event(camp_id, event_id):
     """
     Request to join an event.
 
-    Camp creator can request their camp to join an approved event.
+    Camp managers can request their camp to join an approved event.
     Creates a CampEventAssociation with PENDING status.
 
     Args:
@@ -219,14 +219,14 @@ def request_event(camp_id, event_id):
         Redirect to camp detail with success/error message.
 
     Raises:
-        403: If user is not the camp creator.
+        403: If user is not a camp manager or site admin.
     """
     camp = Camp.query.get_or_404(camp_id)
     event = Event.query.get_or_404(event_id)
 
-    # Check permission: must be camp creator
-    if camp.creator_id != current_user.id:
-        flash('You can only manage your own camps.', 'error')
+    # Check permission: must be camp manager or site admin
+    if not current_user.is_site_admin_or_higher and not current_user.is_camp_manager(camp_id):
+        flash('Only camp managers can request event associations.', 'error')
         abort(403)
 
     # Validate event is approved

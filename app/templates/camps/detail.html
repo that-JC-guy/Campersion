@@ -164,8 +164,8 @@
 
                 <hr>
 
-                <!-- Request to Join Event Form (for camp creator only) -->
-                {% if current_user.is_authenticated and camp.creator_id == current_user.id %}
+                <!-- Request to Join Event Form (for camp managers) -->
+                {% if current_user.is_authenticated and current_user.is_camp_manager(camp.id) %}
                     <div class="mb-4">
                         <h5 class="text-primary mb-3">
                             <i class="bi bi-plus-circle me-2"></i>Request to Join Event
