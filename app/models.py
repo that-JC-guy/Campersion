@@ -78,6 +78,30 @@ class AssociationStatus(str, Enum):
     REJECTED = 'rejected'
 
 
+class CampMemberRole(str, Enum):
+    """
+    Camp member role enumeration for camp-specific permissions.
+
+    These are camp-specific roles, separate from global UserRole:
+    - MANAGER: Can manage camp, approve members, promote/demote members
+    - MEMBER: Regular camp member with no special camp permissions
+    """
+    MANAGER = 'manager'
+    MEMBER = 'member'
+
+
+class MemberApprovalMode(str, Enum):
+    """
+    Camp member approval mode enumeration.
+
+    Determines who can approve/reject member requests:
+    - MANAGER_ONLY: Only camp managers can approve/reject requests
+    - ALL_MEMBERS: Any approved camp member can approve/reject requests
+    """
+    MANAGER_ONLY = 'manager_only'
+    ALL_MEMBERS = 'all_members'
+
+
 class User(UserMixin, db.Model):
     """
     User model for storing user account information.
@@ -379,6 +403,65 @@ class User(UserMixin, db.Model):
         """
         return self.role.title()
 
+    def get_camp_membership(self, camp_id):
+        """
+        Get user's membership for a specific camp.
+
+        Args:
+            camp_id: The ID of the camp to check
+
+        Returns:
+            CampMember object or None if not a member
+        """
+        return self.camp_memberships.filter_by(camp_id=camp_id).first()
+
+    def is_camp_manager(self, camp_id):
+        """
+        Check if user is a manager for a specific camp.
+
+        Args:
+            camp_id: The ID of the camp to check
+
+        Returns:
+            bool: True if user is camp manager, False otherwise
+        """
+        membership = self.get_camp_membership(camp_id)
+        return membership and membership.is_manager
+
+    def is_camp_member(self, camp_id):
+        """
+        Check if user is an approved member of a specific camp (any role).
+
+        Args:
+            camp_id: The ID of the camp to check
+
+        Returns:
+            bool: True if user is approved member, False otherwise
+        """
+        membership = self.get_camp_membership(camp_id)
+        return membership and membership.is_approved
+
+    def can_approve_camp_members(self, camp_id):
+        """
+        Check if user can approve member requests for a specific camp.
+
+        Args:
+            camp_id: The ID of the camp to check
+
+        Returns:
+            bool: True if user can approve members, False otherwise
+        """
+        # Site admins can always approve
+        if self.is_site_admin_or_higher:
+            return True
+
+        # Check camp-specific permissions
+        from app.models import Camp
+        camp = Camp.query.get(camp_id)
+        if camp:
+            return camp.can_user_approve_members(self.id)
+        return False
+
 
 class OAuthProvider(db.Model):
     """
@@ -522,6 +605,11 @@ class Camp(db.Model):
     has_member_activities = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
     has_non_member_activities = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
 
+    # Member approval mode
+    member_approval_mode = db.Column(db.String(20), nullable=False,
+                                     default=MemberApprovalMode.MANAGER_ONLY.value,
+                                     server_default=MemberApprovalMode.MANAGER_ONLY.value)
+
     # Foreign key to creator
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
@@ -552,6 +640,56 @@ class Camp(db.Model):
         if self.has_non_member_activities:
             amenities.append('Non-Member Activities')
         return amenities
+
+    def get_approved_members(self):
+        """Get all approved camp members."""
+        return self.camp_members.filter_by(status=AssociationStatus.APPROVED.value).all()
+
+    def get_managers(self):
+        """Get all camp managers (approved members with MANAGER role)."""
+        return self.camp_members.filter_by(
+            status=AssociationStatus.APPROVED.value,
+            role=CampMemberRole.MANAGER.value
+        ).all()
+
+    def get_regular_members(self):
+        """Get all regular members (approved members with MEMBER role)."""
+        return self.camp_members.filter_by(
+            status=AssociationStatus.APPROVED.value,
+            role=CampMemberRole.MEMBER.value
+        ).all()
+
+    def get_pending_requests(self):
+        """Get all pending membership requests."""
+        return self.camp_members.filter_by(status=AssociationStatus.PENDING.value).all()
+
+    def is_user_member(self, user_id):
+        """Check if user is an approved member (any role)."""
+        membership = self.camp_members.filter_by(
+            user_id=user_id,
+            status=AssociationStatus.APPROVED.value
+        ).first()
+        return membership is not None
+
+    def is_user_manager(self, user_id):
+        """Check if user is a camp manager."""
+        membership = self.camp_members.filter_by(
+            user_id=user_id,
+            status=AssociationStatus.APPROVED.value,
+            role=CampMemberRole.MANAGER.value
+        ).first()
+        return membership is not None
+
+    def can_user_approve_members(self, user_id):
+        """Check if user can approve member requests based on camp settings."""
+        if self.member_approval_mode == MemberApprovalMode.MANAGER_ONLY.value:
+            return self.is_user_manager(user_id)
+        else:  # ALL_MEMBERS
+            return self.is_user_member(user_id)
+
+    def get_user_membership(self, user_id):
+        """Get user's membership record for this camp, or None if not a member."""
+        return self.camp_members.filter_by(user_id=user_id).first()
 
 
 class CampEventAssociation(db.Model):
@@ -609,6 +747,81 @@ class CampEventAssociation(db.Model):
     def is_rejected(self):
         """Check if association is rejected."""
         return self.status == AssociationStatus.REJECTED.value
+
+
+class CampMember(db.Model):
+    """
+    Association table linking users to camps with approval workflow and roles.
+
+    When a user requests to join a camp, an association is created with
+    'pending' status. Camp managers (or all members, depending on settings)
+    approve or reject the request. Approved members can have MANAGER or MEMBER role.
+
+    Camp creators are automatically added as MANAGER when the camp is created.
+    """
+
+    __tablename__ = 'camp_members'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign keys
+    camp_id = db.Column(db.Integer, db.ForeignKey('camps.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Approval status
+    status = db.Column(db.String(20), nullable=False,
+                      default=AssociationStatus.PENDING.value,
+                      server_default=AssociationStatus.PENDING.value)
+
+    # Camp-specific role (MANAGER or MEMBER)
+    role = db.Column(db.String(20), nullable=False,
+                    default=CampMemberRole.MEMBER.value,
+                    server_default=CampMemberRole.MEMBER.value)
+
+    # Timestamps
+    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    approved_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    camp = db.relationship('Camp', backref=db.backref('camp_members', lazy='dynamic',
+                                                       cascade='all, delete-orphan'))
+    user = db.relationship('User', backref=db.backref('camp_memberships', lazy='dynamic',
+                                                       cascade='all, delete-orphan'))
+
+    # Ensure unique user-camp combinations
+    __table_args__ = (
+        db.UniqueConstraint('camp_id', 'user_id', name='uix_camp_user'),
+    )
+
+    def __repr__(self):
+        """String representation of CampMember object."""
+        return f'<CampMember user_id={self.user_id} camp_id={self.camp_id} status={self.status} role={self.role}>'
+
+    @property
+    def is_pending(self):
+        """Check if membership is pending approval."""
+        return self.status == AssociationStatus.PENDING.value
+
+    @property
+    def is_approved(self):
+        """Check if membership is approved."""
+        return self.status == AssociationStatus.APPROVED.value
+
+    @property
+    def is_rejected(self):
+        """Check if membership is rejected."""
+        return self.status == AssociationStatus.REJECTED.value
+
+    @property
+    def is_manager(self):
+        """Check if user is a camp manager."""
+        return self.role == CampMemberRole.MANAGER.value and self.is_approved
+
+    @property
+    def is_member(self):
+        """Check if user is a regular member."""
+        return self.role == CampMemberRole.MEMBER.value and self.is_approved
 
 
 class InventoryItem(db.Model):

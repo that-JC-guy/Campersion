@@ -6,7 +6,7 @@ Any authenticated member can create camps to join events.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, IntegerField, BooleanField, SubmitField
+from wtforms import StringField, TextAreaField, IntegerField, BooleanField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, NumberRange, ValidationError
 
 
@@ -69,6 +69,21 @@ class CampForm(FlaskForm):
     has_art_exhibits = BooleanField('Art Exhibits')
     has_member_activities = BooleanField('Member Activities')
     has_non_member_activities = BooleanField('Non-Member Activities')
+
+    # Member approval mode
+    member_approval_mode = SelectField(
+        'Member Approval Mode',
+        choices=[
+            ('manager_only', 'Manager Only - Only camp managers can approve new members'),
+            ('all_members', 'All Members - Any approved member can approve new members')
+        ],
+        default='manager_only',
+        validators=[DataRequired()],
+        render_kw={
+            'class': 'form-select',
+            'aria-describedby': 'memberApprovalModeHelp'
+        }
+    )
 
     submit = SubmitField('Save Camp')
 
