@@ -26,7 +26,21 @@
 
             <!-- Navigation links - conditional based on authentication status -->
             <div class="navbar-nav ms-auto">
+                <!-- Show events link for all users -->
+                <a class="nav-link" href="{{ url_for('events.list_events') }}">
+                    <i class="bi bi-calendar-event"></i> Events
+                </a>
+                <!-- Show camps link for all users -->
+                <a class="nav-link" href="{{ url_for('camps.list_camps') }}">
+                    <i class="bi bi-house-door"></i> Camps
+                </a>
                 {% if current_user.is_authenticated %}
+                    <!-- Show admin link only for global administrators -->
+                    {% if current_user.is_global_admin %}
+                        <a class="nav-link" href="{{ url_for('admin.list_users') }}">
+                            <i class="bi bi-shield-lock"></i> Admin
+                        </a>
+                    {% endif %}
                     <!-- Show logout button if user is logged in -->
                     <a class="nav-link" href="{{ url_for('main.dashboard') }}">
                         <i class="bi bi-person-circle"></i> Dashboard

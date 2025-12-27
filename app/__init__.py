@@ -6,7 +6,7 @@ It initializes and configures all Flask extensions (SQLAlchemy, Flask-Login,
 Flask-Migrate, Authlib OAuth) and registers application blueprints.
 """
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -80,6 +80,9 @@ def create_app(config_name='development'):
     # Register blueprints
     register_blueprints(app)
 
+    # Register error handlers
+    register_error_handlers(app)
+
     return app
 
 
@@ -126,6 +129,27 @@ def configure_oauth(app):
     )
 
 
+def register_error_handlers(app):
+    """
+    Register error handlers for common HTTP errors.
+
+    Provides custom error pages for 403 Forbidden and 404 Not Found errors.
+
+    Args:
+        app (Flask): Flask application instance.
+    """
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        """Handle 403 Forbidden errors."""
+        return render_template('errors/403.html'), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        """Handle 404 Not Found errors."""
+        return render_template('errors/404.html'), 404
+
+
 def register_blueprints(app):
     """
     Register application blueprints.
@@ -140,6 +164,9 @@ def register_blueprints(app):
     # Import blueprints
     from app.auth import auth_bp
     from app.main import main_bp
+    from app.admin import admin_bp
+    from app.events import events_bp
+    from app.camps import camps_bp
 
     # Register authentication blueprint
     # All auth routes will be prefixed with /auth
@@ -148,3 +175,15 @@ def register_blueprints(app):
     # Register main blueprint
     # Main routes have no prefix (e.g., /, /dashboard)
     app.register_blueprint(main_bp)
+
+    # Register admin blueprint
+    # All admin routes will be prefixed with /admin
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    # Register events blueprint
+    # All events routes will be prefixed with /events
+    app.register_blueprint(events_bp, url_prefix='/events')
+
+    # Register camps blueprint
+    # All camps routes will be prefixed with /camps
+    app.register_blueprint(camps_bp, url_prefix='/camps')

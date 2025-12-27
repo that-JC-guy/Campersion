@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <a href="{{ url_for('events.list_events') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Events
+            </a>
+        </div>
+
+        <!-- Event Details Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <!-- Header with Status Badge -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1>{{ event.title }}</h1>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Created by {{ event.creator.name }}
+                        </p>
+                    </div>
+                    <div>
+                        {% if event.status == EventStatus.APPROVED.value %}
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle"></i> Approved
+                            </span>
+                        {% elif event.status == EventStatus.REJECTED.value %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-x-circle"></i> Rejected
+                            </span>
+                        {% elif event.status == EventStatus.CANCELLED.value %}
+                            <span class="badge bg-secondary fs-6">
+                                <i class="bi bi-slash-circle"></i> Cancelled
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark fs-6">
+                                <i class="bi bi-clock"></i> Pending Approval
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Event Information -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-info-circle me-2"></i>Event Information
+                    </h5>
+
+                    <!-- Dates -->
+                    <div class="mb-3">
+                        <h6><i class="bi bi-calendar-range me-2"></i>Dates:</h6>
+                        <p>
+                            {{ event.start_date.strftime('%B %d, %Y') }}
+                            {% if event.start_date != event.end_date %}
+                                - {{ event.end_date.strftime('%B %d, %Y') }}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="mb-3">
+                        <h6><i class="bi bi-geo-alt me-2"></i>Location:</h6>
+                        <p>{{ event.location if event.location else 'Not specified' }}</p>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <h6><i class="bi bi-card-text me-2"></i>Description:</h6>
+                        <p class="text-muted">{{ event.description }}</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Contact Information -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-telephone me-2"></i>Contact Information
+                    </h5>
+
+                    <!-- Event Manager -->
+                    {% if event.event_manager_email or event.event_manager_phone %}
+                        <div class="mb-3">
+                            <h6><i class="bi bi-person-badge me-2"></i>Event Manager:</h6>
+                            {% if event.event_manager_email %}
+                                <p class="mb-1">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    <a href="mailto:{{ event.event_manager_email }}">{{ event.event_manager_email }}</a>
+                                </p>
+                            {% endif %}
+                            {% if event.event_manager_phone %}
+                                <p class="mb-1">
+                                    <i class="bi bi-telephone me-2"></i>
+                                    <a href="tel:{{ event.event_manager_phone }}">{{ event.event_manager_phone }}</a>
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Safety Manager -->
+                    {% if event.safety_manager_email or event.safety_manager_phone %}
+                        <div class="mb-3">
+                            <h6><i class="bi bi-shield-check me-2"></i>Safety Manager:</h6>
+                            {% if event.safety_manager_email %}
+                                <p class="mb-1">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    <a href="mailto:{{ event.safety_manager_email }}">{{ event.safety_manager_email }}</a>
+                                </p>
+                            {% endif %}
+                            {% if event.safety_manager_phone %}
+                                <p class="mb-1">
+                                    <i class="bi bi-telephone me-2"></i>
+                                    <a href="tel:{{ event.safety_manager_phone }}">{{ event.safety_manager_phone }}</a>
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Business Manager -->
+                    {% if event.business_manager_email or event.business_manager_phone %}
+                        <div class="mb-3">
+                            <h6><i class="bi bi-briefcase me-2"></i>Business Manager:</h6>
+                            {% if event.business_manager_email %}
+                                <p class="mb-1">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    <a href="mailto:{{ event.business_manager_email }}">{{ event.business_manager_email }}</a>
+                                </p>
+                            {% endif %}
+                            {% if event.business_manager_phone %}
+                                <p class="mb-1">
+                                    <i class="bi bi-telephone me-2"></i>
+                                    <a href="tel:{{ event.business_manager_phone }}">{{ event.business_manager_phone }}</a>
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Board of Directors -->
+                    {% if event.board_email %}
+                        <div class="mb-3">
+                            <h6><i class="bi bi-people me-2"></i>Board of Directors:</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-envelope me-2"></i>
+                                <a href="mailto:{{ event.board_email }}">{{ event.board_email }}</a>
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    {% if not (event.event_manager_email or event.event_manager_phone or event.safety_manager_email or event.safety_manager_phone or event.business_manager_email or event.business_manager_phone or event.board_email) %}
+                        <p class="text-muted">No contact information provided</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Associated Camps -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-house-door me-2"></i>Associated Camps
+                    </h5>
+
+                    {% set approved_camps = event.camp_associations.filter_by(status='approved').all() %}
+                    {% if approved_camps %}
+                        <div class="row">
+                            {% for association in approved_camps %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ association.camp.name }}</h6>
+                                            <p class="card-text text-muted">
+                                                <small>
+                                                    <i class="bi bi-geo-alt"></i> {{ association.camp.location }}<br>
+                                                    <i class="bi bi-people"></i> {{ association.camp.max_people }} people
+                                                </small>
+                                            </p>
+                                            <a href="{{ url_for('camps.view_camp', camp_id=association.camp.id) }}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                View Camp
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No camps associated with this event yet.</p>
+                    {% endif %}
+
+                    {% if current_user.is_authenticated and (event.creator_id == current_user.id or current_user.is_site_admin_or_higher) %}
+                        <a href="{{ url_for('camps.event_camps', event_id=event.id) }}"
+                           class="btn btn-outline-secondary mt-2">
+                            <i class="bi bi-gear"></i> Manage Camp Requests
+                        </a>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Metadata -->
+                <div class="mb-4">
+                    <small class="text-muted">
+                        <strong>Created:</strong> {{ event.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        <br>
+                        <strong>Last Updated:</strong> {{ event.updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                    </small>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if current_user.is_authenticated %}
+                        {% if event.creator_id == current_user.id or current_user.is_site_admin_or_higher %}
+                            <a href="{{ url_for('events.edit_event', event_id=event.id) }}" class="btn btn-primary">
+                                <i class="bi bi-pencil-square"></i> Edit Event
+                            </a>
+                        {% endif %}
+
+                        {% if event.status == EventStatus.PENDING.value and current_user.is_site_admin_or_higher %}
+                            <form method="POST" action="{{ url_for('events.approve_event', event_id=event.id) }}" style="display:inline;">
+                                <button class="btn btn-success" type="submit">
+                                    <i class="bi bi-check-circle"></i> Approve Event
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('events.reject_event', event_id=event.id) }}" style="display:inline;">
+                                <button class="btn btn-danger" type="submit">
+                                    <i class="bi bi-x-circle"></i> Reject Event
+                                </button>
+                            </form>
+                        {% elif event.status == EventStatus.APPROVED.value and (event.creator_id == current_user.id or current_user.is_site_admin_or_higher) %}
+                            <form method="POST" action="{{ url_for('events.cancel_event', event_id=event.id) }}" style="display:inline;">
+                                <button class="btn btn-warning" type="submit" onclick="return confirm('Are you sure you want to cancel this event?');">
+                                    <i class="bi bi-slash-circle"></i> Cancel Event
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Note for Pending Events -->
+        {% if event.status == EventStatus.PENDING.value %}
+            <div class="alert alert-warning mt-4" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Pending Approval:</strong>
+                This event is awaiting site admin approval before it becomes publicly visible.
+            </div>
+        {% endif %}
+
+        <!-- Rejection Note -->
+        {% if event.status == EventStatus.REJECTED.value %}
+            <div class="alert alert-danger mt-4" role="alert">
+                <i class="bi bi-x-octagon me-2"></i>
+                <strong>Rejected:</strong>
+                This event was rejected by a site administrator and is not publicly visible.
+            </div>
+        {% endif %}
+
+        <!-- Cancellation Note -->
+        {% if event.status == EventStatus.CANCELLED.value %}
+            <div class="alert alert-secondary mt-4" role="alert">
+                <i class="bi bi-slash-circle me-2"></i>
+                <strong>Cancelled:</strong>
+                This event has been cancelled and is no longer active.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -8,9 +8,74 @@ through account linking via email matching.
 
 from datetime import datetime, timedelta
 import secrets
+from enum import Enum
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
+
+
+class UserRole(str, Enum):
+    """
+    User role enumeration defining access levels.
+
+    Roles are listed in order of decreasing privilege:
+    - GLOBAL_ADMIN: Full system access, can manage all users and settings
+    - SITE_ADMIN: Can manage site-level content and users
+    - EVENT_MANAGER: Can create and manage events
+    - CAMP_MANAGER: Can manage specific camps
+    - MEMBER: Basic user access
+    """
+    GLOBAL_ADMIN = 'global admin'
+    SITE_ADMIN = 'site admin'
+    EVENT_MANAGER = 'event manager'
+    CAMP_MANAGER = 'camp manager'
+    MEMBER = 'member'
+
+    @classmethod
+    def get_role_hierarchy(cls):
+        """
+        Return roles in order of privilege level (highest to lowest).
+
+        Returns:
+            list: List of UserRole enum values in hierarchical order
+        """
+        return [
+            cls.GLOBAL_ADMIN,
+            cls.SITE_ADMIN,
+            cls.EVENT_MANAGER,
+            cls.CAMP_MANAGER,
+            cls.MEMBER
+        ]
+
+
+class EventStatus(str, Enum):
+    """
+    Event status enumeration for approval workflow.
+
+    Events progress through these statuses:
+    - PENDING: Event created, awaiting site admin approval
+    - APPROVED: Event approved by site admin, publicly visible
+    - REJECTED: Event rejected by site admin
+    - CANCELLED: Event was cancelled by creator or site admin
+    """
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    CANCELLED = 'cancelled'
+
+
+class AssociationStatus(str, Enum):
+    """
+    Association status enumeration for camp-event approval workflow.
+
+    Camp-event associations progress through these statuses:
+    - PENDING: Camp requested to join event, awaiting event creator approval
+    - APPROVED: Request approved by event creator, camp is associated with event
+    - REJECTED: Request rejected by event creator
+    """
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
 
 
 class User(UserMixin, db.Model):
@@ -40,6 +105,10 @@ class User(UserMixin, db.Model):
     # Account metadata
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Role-based access control
+    # Each user has exactly one role from the UserRole enum
+    role = db.Column(db.String(20), nullable=False, default=UserRole.MEMBER.value, server_default=UserRole.MEMBER.value)
 
     # Password authentication fields
     # password_hash stores bcrypt-hashed password (nullable for OAuth-only users)
@@ -152,6 +221,75 @@ class User(UserMixin, db.Model):
         """
         return self.oauth_providers.count() > 0
 
+    # Role-based access control methods
+    def has_role(self, role):
+        """
+        Check if user has the specified role.
+
+        Args:
+            role (str or UserRole): Role to check (can be string or UserRole enum)
+
+        Returns:
+            bool: True if user has the role, False otherwise
+        """
+        if isinstance(role, UserRole):
+            role = role.value
+        return self.role == role
+
+    def has_role_or_higher(self, role):
+        """
+        Check if user has the specified role or higher privilege level.
+
+        Uses the role hierarchy to determine if user's role has equal or
+        greater privileges than the specified role.
+
+        Args:
+            role (str or UserRole): Role to check (can be string or UserRole enum)
+
+        Returns:
+            bool: True if user has this role or higher, False otherwise
+        """
+        if isinstance(role, UserRole):
+            role = role.value
+
+        hierarchy = UserRole.get_role_hierarchy()
+        try:
+            user_role_index = hierarchy.index(UserRole(self.role))
+            check_role_index = hierarchy.index(UserRole(role))
+            return user_role_index <= check_role_index
+        except (ValueError, IndexError):
+            return False
+
+    @property
+    def is_global_admin(self):
+        """
+        Check if user is a global admin.
+
+        Returns:
+            bool: True if user is global admin, False otherwise
+        """
+        return self.role == UserRole.GLOBAL_ADMIN.value
+
+    @property
+    def is_site_admin_or_higher(self):
+        """
+        Check if user is site admin or higher privilege level.
+
+        Returns:
+            bool: True if user is site admin or global admin, False otherwise
+        """
+        return self.has_role_or_higher(UserRole.SITE_ADMIN)
+
+    @property
+    def role_display_name(self):
+        """
+        Get user-friendly display name for role.
+
+        Returns:
+            str: Capitalized role name (e.g., "Global Admin")
+        """
+        return self.role.title()
+
 
 class OAuthProvider(db.Model):
     """
@@ -187,3 +325,198 @@ class OAuthProvider(db.Model):
     def __repr__(self):
         """String representation of OAuthProvider object."""
         return f'<OAuthProvider {self.provider_name}:{self.provider_user_id}>'
+
+
+class Event(db.Model):
+    """
+    Event model for managing festivals, concerts, and large gatherings.
+
+    Events are created by event managers with 'pending' status and must be
+    approved by site administrators before becoming publicly visible.
+    """
+
+    __tablename__ = 'events'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Basic event information
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    location = db.Column(db.String(255), nullable=True)
+
+    # Event dates
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+
+    # Contact information
+    event_manager_email = db.Column(db.String(255), nullable=True)
+    event_manager_phone = db.Column(db.String(20), nullable=True)
+    safety_manager_email = db.Column(db.String(255), nullable=True)
+    safety_manager_phone = db.Column(db.String(20), nullable=True)
+    business_manager_email = db.Column(db.String(255), nullable=True)
+    business_manager_phone = db.Column(db.String(20), nullable=True)
+    board_email = db.Column(db.String(255), nullable=True)
+
+    # Status for approval workflow
+    status = db.Column(db.String(20), nullable=False,
+                      default=EventStatus.PENDING.value,
+                      server_default=EventStatus.PENDING.value)
+
+    # Foreign key to creator (User who created the event)
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Relationship to User
+    creator = db.relationship('User', backref='created_events', lazy=True)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
+                          onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        """String representation of Event object."""
+        return f'<Event {self.title}>'
+
+    @property
+    def is_pending(self):
+        """Check if event is pending approval."""
+        return self.status == EventStatus.PENDING.value
+
+    @property
+    def is_approved(self):
+        """Check if event is approved."""
+        return self.status == EventStatus.APPROVED.value
+
+    @property
+    def is_rejected(self):
+        """Check if event is rejected."""
+        return self.status == EventStatus.REJECTED.value
+
+    @property
+    def is_cancelled(self):
+        """Check if event is cancelled."""
+        return self.status == EventStatus.CANCELLED.value
+
+    @property
+    def status_display_name(self):
+        """Get user-friendly status name."""
+        return self.status.title()
+
+
+class Camp(db.Model):
+    """
+    Camp model for managing community camps/villages at events.
+
+    Camps are created by any authenticated member and can request to join events.
+    Event creators must approve camp requests before they are associated.
+    """
+
+    __tablename__ = 'camps'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Basic camp information
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    location = db.Column(db.String(255), nullable=False)
+
+    # Capacity
+    max_sites = db.Column(db.Integer, nullable=False)
+    max_people = db.Column(db.Integer, nullable=False)
+
+    # Amenities (boolean fields)
+    has_communal_kitchen = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    has_communal_space = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    has_art_exhibits = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    has_member_activities = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    has_non_member_activities = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+
+    # Foreign key to creator
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Relationship to User
+    creator = db.relationship('User', backref='created_camps', lazy=True)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
+                          onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        """String representation of Camp object."""
+        return f'<Camp {self.name}>'
+
+    @property
+    def amenities_list(self):
+        """Get list of available amenities."""
+        amenities = []
+        if self.has_communal_kitchen:
+            amenities.append('Communal Kitchen')
+        if self.has_communal_space:
+            amenities.append('Communal Space')
+        if self.has_art_exhibits:
+            amenities.append('Art Exhibits')
+        if self.has_member_activities:
+            amenities.append('Member Activities')
+        if self.has_non_member_activities:
+            amenities.append('Non-Member Activities')
+        return amenities
+
+
+class CampEventAssociation(db.Model):
+    """
+    Association table linking camps to events with approval workflow.
+
+    When a camp requests to join an event, an association is created with
+    'pending' status. The event creator must approve or reject the request.
+    """
+
+    __tablename__ = 'camp_event_associations'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign keys
+    camp_id = db.Column(db.Integer, db.ForeignKey('camps.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
+
+    # Approval status
+    status = db.Column(db.String(20), nullable=False,
+                      default=AssociationStatus.PENDING.value,
+                      server_default=AssociationStatus.PENDING.value)
+
+    # Timestamps
+    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    approved_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    camp = db.relationship('Camp', backref=db.backref('event_associations', lazy='dynamic',
+                                                       cascade='all, delete-orphan'))
+    event = db.relationship('Event', backref=db.backref('camp_associations', lazy='dynamic',
+                                                         cascade='all, delete-orphan'))
+
+    # Ensure unique camp-event combinations
+    __table_args__ = (
+        db.UniqueConstraint('camp_id', 'event_id', name='uix_camp_event'),
+    )
+
+    def __repr__(self):
+        """String representation of CampEventAssociation object."""
+        return f'<CampEventAssociation camp_id={self.camp_id} event_id={self.event_id} status={self.status}>'
+
+    @property
+    def is_pending(self):
+        """Check if association is pending approval."""
+        return self.status == AssociationStatus.PENDING.value
+
+    @property
+    def is_approved(self):
+        """Check if association is approved."""
+        return self.status == AssociationStatus.APPROVED.value
+
+    @property
+    def is_rejected(self):
+        """Check if association is rejected."""
+        return self.status == AssociationStatus.REJECTED.value

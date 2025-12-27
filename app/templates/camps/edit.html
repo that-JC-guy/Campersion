@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Camp - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <!-- Edit Camp Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="bi bi-pencil-square display-3 text-primary"></i>
+                    <h2 class="mt-3">Edit Camp</h2>
+                    <p class="text-muted">
+                        Update camp details
+                    </p>
+                </div>
+
+                <!-- Camp Form -->
+                <form method="POST" action="{{ url_for('camps.edit_camp', camp_id=camp.id) }}">
+                    {{ form.hidden_tag() }}
+
+                    <!-- Name Field -->
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Camp Name</label>
+                        {{ form.name(class="form-control form-control-lg") }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description Field -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description(class="form-control") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Location Field -->
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        {{ form.location(class="form-control") }}
+                        {% if form.location.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.location.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Capacity Fields -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="max_sites" class="form-label">Maximum Sites</label>
+                            {{ form.max_sites(class="form-control") }}
+                            {% if form.max_sites.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.max_sites.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="max_people" class="form-label">Maximum People</label>
+                            {{ form.max_people(class="form-control") }}
+                            {% if form.max_people.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.max_people.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Amenities Section -->
+                    <hr class="my-4">
+                    <h5 class="mb-3">Amenities</h5>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.has_communal_kitchen(class="form-check-input") }}
+                            <label class="form-check-label" for="has_communal_kitchen">
+                                {{ form.has_communal_kitchen.label.text }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.has_communal_space(class="form-check-input") }}
+                            <label class="form-check-label" for="has_communal_space">
+                                {{ form.has_communal_space.label.text }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.has_art_exhibits(class="form-check-input") }}
+                            <label class="form-check-label" for="has_art_exhibits">
+                                {{ form.has_art_exhibits.label.text }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.has_member_activities(class="form-check-input") }}
+                            <label class="form-check-label" for="has_member_activities">
+                                {{ form.has_member_activities.label.text }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.has_non_member_activities(class="form-check-input") }}
+                            <label class="form-check-label" for="has_non_member_activities">
+                                {{ form.has_non_member_activities.label.text }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('camps.view_camp', camp_id=camp.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Camp
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
