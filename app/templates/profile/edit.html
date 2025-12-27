@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Page Header -->
+        <div class="mb-4">
+            <h1><i class="bi bi-pencil"></i> Edit Profile</h1>
+            <p class="text-muted">Update your personal information and contact details</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.edit_profile') }}">
+            {{ form.hidden_tag() }}
+
+            <!-- Personal Information Section -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">
+                        <i class="bi bi-person-badge"></i> Personal Information
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name *</label>
+                            {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                            {% if form.first_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.first_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name *</label>
+                            {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                            {% if form.last_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.last_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="preferred_name" class="form-label">Preferred Name</label>
+                            {{ form.preferred_name(class="form-control") }}
+                            <small class="form-text text-muted">What you'd like to be called</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="pronouns" class="form-label">Pronouns</label>
+                            {{ form.pronouns(class="form-control") }}
+                            <small class="form-text text-muted">e.g., she/her, he/him, they/them</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information Section -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">
+                        <i class="bi bi-telephone"></i> Contact Information
+                    </h5>
+
+                    <div class="mb-3">
+                        <label for="home_phone" class="form-label">Home Phone</label>
+                        {{ form.home_phone(class="form-control" + (" is-invalid" if form.home_phone.errors else "")) }}
+                        {% if form.home_phone.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.home_phone.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="mobile_phone" class="form-label">Mobile Phone</label>
+                        {{ form.mobile_phone(class="form-control" + (" is-invalid" if form.mobile_phone.errors else "")) }}
+                        {% if form.mobile_phone.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.mobile_phone.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="work_phone" class="form-label">Work Phone</label>
+                        {{ form.work_phone(class="form-control" + (" is-invalid" if form.work_phone.errors else "")) }}
+                        {% if form.work_phone.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.work_phone.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Section -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">
+                        <i class="bi bi-geo-alt"></i> Address
+                    </h5>
+
+                    <div class="mb-3">
+                        <label for="address_line1" class="form-label">Address Line 1</label>
+                        {{ form.address_line1(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address_line2" class="form-label">Address Line 2</label>
+                        {{ form.address_line2(class="form-control") }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="city" class="form-label">City</label>
+                            {{ form.city(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="state" class="form-label">State</label>
+                            {{ form.state(class="form-control") }}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="zip_code" class="form-label">ZIP Code</label>
+                            {{ form.zip_code(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="country" class="form-label">Country</label>
+                        {{ form.country(class="form-control") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('main.view_profile') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

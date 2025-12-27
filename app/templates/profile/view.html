@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-circle"></i> My Profile</h1>
+            <a href="{{ url_for('main.edit_profile') }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Edit Profile
+            </a>
+        </div>
+
+        <!-- Personal Information Card -->
+        <div class="card shadow-lg mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-person-badge"></i> Personal Information
+                </h5>
+
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th style="width: 30%;">Display Name:</th>
+                            <td>{{ user.display_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>First Name:</th>
+                            <td>{{ user.first_name or '—' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Name:</th>
+                            <td>{{ user.last_name or '—' }}</td>
+                        </tr>
+                        {% if user.preferred_name %}
+                        <tr>
+                            <th>Preferred Name:</th>
+                            <td>{{ user.preferred_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if user.pronouns %}
+                        <tr>
+                            <th>Pronouns:</th>
+                            <td>{{ user.pronouns }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contact Information Card -->
+        <div class="card shadow-lg mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-telephone"></i> Contact Information
+                </h5>
+
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th style="width: 30%;"><i class="bi bi-envelope me-2"></i>Email:</th>
+                            <td>
+                                {{ user.email }}
+                                <a href="{{ url_for('main.change_email') }}" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="bi bi-pencil"></i> Change
+                                </a>
+                            </td>
+                        </tr>
+                        {% if user.home_phone %}
+                        <tr>
+                            <th><i class="bi bi-house me-2"></i>Home Phone:</th>
+                            <td>{{ user.home_phone }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if user.mobile_phone %}
+                        <tr>
+                            <th><i class="bi bi-phone me-2"></i>Mobile Phone:</th>
+                            <td>{{ user.mobile_phone }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if user.work_phone %}
+                        <tr>
+                            <th><i class="bi bi-briefcase me-2"></i>Work Phone:</th>
+                            <td>{{ user.work_phone }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Address Card -->
+        {% if user.address_line1 or user.city or user.state %}
+        <div class="card shadow-lg mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-geo-alt"></i> Address
+                </h5>
+
+                <address>
+                    {% if user.address_line1 %}{{ user.address_line1 }}<br>{% endif %}
+                    {% if user.address_line2 %}{{ user.address_line2 }}<br>{% endif %}
+                    {% if user.city or user.state or user.zip_code %}
+                        {{ user.city }}{% if user.city and user.state %}, {% endif %}{{ user.state }} {{ user.zip_code }}<br>
+                    {% endif %}
+                    {{ user.country }}
+                </address>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Account Information Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-info-circle"></i> Account Information
+                </h5>
+
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th style="width: 30%;">Role:</th>
+                            <td><span class="badge bg-primary">{{ user.role_display_name }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Member Since:</th>
+                            <td>{{ user.created_at.strftime('%B %d, %Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Login:</th>
+                            <td>{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

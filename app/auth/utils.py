@@ -56,9 +56,20 @@ def link_or_create_user(email, name, picture, provider, provider_user_id):
     if not user:
         # Create new user account
         # OAuth users are considered verified since they authenticated with OAuth provider
+
+        # Split OAuth name into first/last if possible
+        first_name = None
+        last_name = None
+        if name:
+            name_parts = name.split(' ', 1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else None
+
         user = User(
             email=email,
-            name=name,
+            name=name,  # Keep for OAuth compatibility
+            first_name=first_name,
+            last_name=last_name,
             picture=picture,
             email_verified=True
         )

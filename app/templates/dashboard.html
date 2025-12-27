@@ -7,7 +7,7 @@
     <div class="col-lg-8">
         <!-- Welcome Header -->
         <div class="text-center mb-4">
-            <h1>Welcome, {{ user.name }}!</h1>
+            <h1>Welcome, {{ user.display_name }}!</h1>
             <p class="text-muted">Here are your account details</p>
         </div>
 
@@ -23,7 +23,7 @@
                     <div class="col-md-3 text-center mb-3 mb-md-0">
                         {% if user.picture %}
                             <img src="{{ user.picture }}"
-                                 alt="{{ user.name }}"
+                                 alt="{{ user.display_name }}"
                                  class="img-fluid rounded-circle"
                                  style="max-width: 150px;">
                         {% else %}
@@ -42,7 +42,7 @@
                                     <th style="width: 30%;">
                                         <i class="bi bi-person-badge me-2"></i>Name:
                                     </th>
-                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.full_name }}</td>
                                 </tr>
                                 <tr>
                                     <th>
