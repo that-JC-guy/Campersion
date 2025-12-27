@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Members - {{ camp.name }} - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <a href="{{ url_for('camps.view_camp', camp_id=camp.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Camp
+            </a>
+        </div>
+
+        <!-- Header -->
+        <div class="mb-4">
+            <h2><i class="bi bi-people me-2"></i>Manage Camp Members</h2>
+            <p class="text-muted">
+                Camp: <strong>{{ camp.name }}</strong>
+            </p>
+            <p class="text-muted">
+                <small>
+                    <i class="bi bi-info-circle me-1"></i>
+                    Member Approval Mode:
+                    {% if camp.member_approval_mode == 'manager_only' %}
+                        <span class="badge bg-primary">Manager Only</span>
+                        - Only camp managers can approve member requests
+                    {% else %}
+                        <span class="badge bg-success">All Members</span>
+                        - Any approved member can approve member requests
+                    {% endif %}
+                </small>
+            </p>
+        </div>
+
+        <!-- Pending Requests -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Pending Membership Requests ({{ pending|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pending %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Requested</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membership in pending %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-person-circle me-1"></i>
+                                            <strong>{{ membership.user.name }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ membership.user.email }}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ membership.requested_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <form method="POST" action="{{ url_for('camps.approve_member', camp_id=camp.id, user_id=membership.user.id) }}" style="display:inline;">
+                                                <button class="btn btn-sm btn-success" type="submit">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('camps.reject_member', camp_id=camp.id, user_id=membership.user.id) }}" style="display:inline;">
+                                                <button class="btn btn-sm btn-danger" type="submit">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No pending membership requests.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Camp Managers -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-star me-2"></i>
+                    Camp Managers ({{ managers|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if managers %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Member Since</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membership in managers %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-person-circle me-1"></i>
+                                            <strong>{{ membership.user.name }}</strong>
+                                            {% if membership.user.id == camp.creator_id %}
+                                                <span class="badge bg-secondary ms-1">Creator</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ membership.user.email }}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ membership.approved_at.strftime('%B %d, %Y') if membership.approved_at else 'N/A' }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if managers|length > 1 %}
+                                                <form method="POST" action="{{ url_for('camps.demote_manager', camp_id=camp.id, user_id=membership.user.id) }}" style="display:inline;">
+                                                    <button class="btn btn-sm btn-warning" type="submit">
+                                                        <i class="bi bi-arrow-down-circle"></i> Demote to Member
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-secondary" type="button" disabled title="Cannot demote the last manager">
+                                                    <i class="bi bi-lock"></i> Last Manager
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No camp managers.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Regular Members -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>
+                    Regular Members ({{ regular_members|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if regular_members %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Member Since</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membership in regular_members %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-person-circle me-1"></i>
+                                            <strong>{{ membership.user.name }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ membership.user.email }}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ membership.approved_at.strftime('%B %d, %Y') if membership.approved_at else 'N/A' }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <form method="POST" action="{{ url_for('camps.promote_member', camp_id=camp.id, user_id=membership.user.id) }}" style="display:inline;">
+                                                <button class="btn btn-sm btn-primary" type="submit">
+                                                    <i class="bi bi-arrow-up-circle"></i> Promote to Manager
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No regular members yet.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Rejected Requests -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Rejected Membership Requests ({{ rejected|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if rejected %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Requested</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membership in rejected %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-person-circle me-1"></i>
+                                            <strong>{{ membership.user.name }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ membership.user.email }}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ membership.requested_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No rejected membership requests.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

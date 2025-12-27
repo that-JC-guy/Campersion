@@ -80,6 +80,90 @@
 
                 <hr>
 
+                <!-- Camp Membership Section -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-people me-2"></i>Camp Membership
+                    </h5>
+
+                    {% if current_user.is_authenticated %}
+                        <!-- Request to Join Button (for non-members) -->
+                        {% if not user_membership %}
+                            <div class="mb-3">
+                                <form method="POST" action="{{ url_for('camps.request_membership', camp_id=camp.id) }}">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-person-plus me-2"></i>Request to Join Camp
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <!-- Membership Status Alerts -->
+                            {% if user_membership.status == AssociationStatus.PENDING.value %}
+                                <div class="alert alert-warning" role="alert">
+                                    <i class="bi bi-clock-history me-2"></i>
+                                    <strong>Membership Pending:</strong> Your request to join this camp is awaiting approval.
+                                </div>
+                            {% elif user_membership.status == AssociationStatus.APPROVED.value %}
+                                <div class="alert alert-success" role="alert">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    <strong>You are a member of this camp</strong>
+                                    {% if user_membership.role == CampMemberRole.MANAGER.value %}
+                                        <span class="badge bg-primary ms-2">Camp Manager</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-2">Member</span>
+                                    {% endif %}
+                                </div>
+                            {% elif user_membership.status == AssociationStatus.REJECTED.value %}
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    <strong>Membership Rejected:</strong> Your request to join this camp was not approved.
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- Manage Members Button (for users who can approve members) -->
+                        {% if current_user.can_approve_camp_members(camp.id) %}
+                            <div class="mb-3">
+                                <a href="{{ url_for('camps.manage_members', camp_id=camp.id) }}" class="btn btn-primary">
+                                    <i class="bi bi-gear me-2"></i>Manage Members
+                                    {% if pending_count > 0 %}
+                                        <span class="badge bg-warning text-dark ms-2">{{ pending_count }} pending</span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- List of Approved Members (visible to everyone) -->
+                    {% set approved_members = camp.get_approved_members() %}
+                    {% if approved_members %}
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">
+                                    <i class="bi bi-people-fill me-2"></i>Members ({{ approved_members|length }})
+                                </h6>
+                                <div class="row">
+                                    {% for membership in approved_members %}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle me-2"></i>
+                                                <span>{{ membership.user.name }}</span>
+                                                {% if membership.role == CampMemberRole.MANAGER.value %}
+                                                    <span class="badge bg-primary ms-2">Manager</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No members yet.</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+
                 <!-- Request to Join Event Form (for camp creator only) -->
                 {% if current_user.is_authenticated and camp.creator_id == current_user.id %}
                     <div class="mb-4">

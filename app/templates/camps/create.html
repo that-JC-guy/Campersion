@@ -123,6 +123,25 @@
                         </div>
                     </div>
 
+                    <!-- Member Approval Mode -->
+                    <hr class="my-4">
+                    <h5 class="mb-3">Member Management</h5>
+
+                    <div class="mb-3">
+                        {{ form.member_approval_mode.label(class="form-label") }}
+                        {{ form.member_approval_mode(class="form-select") }}
+                        <div id="memberApprovalModeHelp" class="form-text">
+                            Choose who can approve new member requests for this camp.
+                        </div>
+                        {% if form.member_approval_mode.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.member_approval_mode.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="d-grid gap-2">
                         {{ form.submit(class="btn btn-primary btn-lg") }}
