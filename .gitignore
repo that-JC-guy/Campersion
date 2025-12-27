@@ -1,6 +1,11 @@
 # Environment variables (contains secrets)
 .env
 
+# Helper files for code development
+current_context.txt
+PROMPTS.txt
+settings.local.json
+
 # Python cache files
 __pycache__/
 *.py[cod]
