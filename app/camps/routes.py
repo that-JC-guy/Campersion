@@ -124,10 +124,31 @@ def view_camp(camp_id):
         status=AssociationStatus.APPROVED.value
     ).all()]
 
-    shared_inventory = InventoryItem.query.filter(
+    shared_items = InventoryItem.query.filter(
         InventoryItem.user_id.in_(approved_member_ids),
         InventoryItem.is_shared_gear == True
     ).order_by(InventoryItem.name.asc()).all() if approved_member_ids else []
+
+    # Group shared inventory by item name
+    from collections import defaultdict
+    grouped_inventory = defaultdict(lambda: {'total_quantity': 0, 'owners': [], 'descriptions': []})
+
+    for item in shared_items:
+        grouped_inventory[item.name]['total_quantity'] += item.quantity
+        grouped_inventory[item.name]['owners'].append(item.owner.display_name)
+        if item.description and item.description not in grouped_inventory[item.name]['descriptions']:
+            grouped_inventory[item.name]['descriptions'].append(item.description)
+
+    # Convert to list of dicts for template
+    shared_inventory = [
+        {
+            'name': name,
+            'total_quantity': data['total_quantity'],
+            'owners': ', '.join(data['owners']),
+            'description': '; '.join(data['descriptions']) if data['descriptions'] else None
+        }
+        for name, data in sorted(grouped_inventory.items())
+    ]
 
     return render_template('camps/detail.html',
                          camp=camp,
