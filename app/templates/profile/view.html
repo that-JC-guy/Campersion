@@ -5,12 +5,35 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="bi bi-person-circle"></i> My Profile</h1>
-            <a href="{{ url_for('main.edit_profile') }}" class="btn btn-primary">
-                <i class="bi bi-pencil"></i> Edit Profile
-            </a>
+        <!-- Welcome Header with Profile Picture -->
+        <div class="card shadow-lg mb-4">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <!-- Profile Picture -->
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        {% if user.picture %}
+                            <img src="{{ user.picture }}"
+                                 alt="{{ user.display_name }}"
+                                 class="img-fluid rounded-circle"
+                                 style="max-width: 150px;">
+                        {% else %}
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                                 style="width: 150px; height: 150px; font-size: 3rem;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Welcome Message and Edit Button -->
+                    <div class="col-md-9">
+                        <h1 class="mb-2">Welcome, {{ user.display_name }}!</h1>
+                        <p class="text-muted mb-3">Manage your profile and account settings</p>
+                        <a href="{{ url_for('main.edit_profile') }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Personal Information Card -->
@@ -111,6 +134,66 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Linked OAuth Providers Card -->
+        <div class="card shadow-lg mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-link-45deg"></i> Linked Accounts
+                </h5>
+
+                <p class="text-muted mb-3">
+                    You can use any of these accounts to sign in to your profile:
+                </p>
+
+                <!-- List of linked providers -->
+                <div class="list-group">
+                    {% for provider in linked_providers %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <!-- Provider icon and name -->
+                                {% if provider.provider_name == 'google' %}
+                                    <i class="bi bi-google text-danger"></i>
+                                    <strong>Google</strong>
+                                {% elif provider.provider_name == 'microsoft' %}
+                                    <i class="bi bi-microsoft text-primary"></i>
+                                    <strong>Microsoft</strong>
+                                {% endif %}
+
+                                <!-- When this account was linked -->
+                                <small class="text-muted d-block">
+                                    Linked on {{ provider.created_at.strftime('%B %d, %Y') }}
+                                </small>
+                            </div>
+
+                            <!-- Status badge -->
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Active
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Link additional account suggestion -->
+                {% if linked_providers|length < 2 %}
+                    <div class="alert alert-info mt-4 mb-0" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <small>
+                            You can link additional OAuth providers to your account by logging in with them.
+                            {% if linked_providers|length == 1 %}
+                                Try logging out and signing in with
+                                {% if linked_providers[0].provider_name == 'google' %}
+                                    Microsoft
+                                {% else %}
+                                    Google
+                                {% endif %}
+                                using the same email address!
+                            {% endif %}
+                        </small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
 
         <!-- Account Information Card -->
         <div class="card shadow-lg">

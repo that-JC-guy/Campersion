@@ -35,26 +35,15 @@ def index():
 @login_required
 def dashboard():
     """
-    User dashboard page.
+    User dashboard redirect.
 
-    Displays the logged-in user's information including:
-    - Profile picture (if available)
-    - Name
-    - Email
-    - Linked OAuth providers
-    - Account created date
-    - Last login timestamp
+    Dashboard has been merged with the profile page.
+    This route now redirects to the profile view.
 
     Returns:
-        Rendered dashboard template with user information
+        Redirect to profile view
     """
-    linked_providers = current_user.oauth_providers.all()
-
-    return render_template(
-        'dashboard.html',
-        user=current_user,
-        linked_providers=linked_providers
-    )
+    return redirect(url_for('main.view_profile'))
 
 
 # ========================================
@@ -67,12 +56,14 @@ def view_profile():
     """
     View user's own profile.
 
-    Displays all profile information in read-only format.
+    Displays all profile information in read-only format,
+    including linked OAuth providers and account details.
 
     Returns:
         Rendered profile view template
     """
-    return render_template('profile/view.html', user=current_user)
+    linked_providers = current_user.oauth_providers.all()
+    return render_template('profile/view.html', user=current_user, linked_providers=linked_providers)
 
 
 @main_bp.route('/profile/edit', methods=['GET', 'POST'])
