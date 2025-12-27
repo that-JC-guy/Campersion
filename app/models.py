@@ -592,7 +592,6 @@ class Camp(db.Model):
     # Basic camp information
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    location = db.Column(db.String(255), nullable=False)
 
     # Capacity
     max_sites = db.Column(db.Integer, nullable=False)
@@ -718,6 +717,9 @@ class CampEventAssociation(db.Model):
     status = db.Column(db.String(20), nullable=False,
                       default=AssociationStatus.PENDING.value,
                       server_default=AssociationStatus.PENDING.value)
+
+    # Camp location at this specific event
+    location = db.Column(db.String(255), nullable=True)
 
     # Timestamps
     requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

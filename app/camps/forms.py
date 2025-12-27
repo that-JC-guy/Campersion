@@ -36,15 +36,6 @@ class CampForm(FlaskForm):
         render_kw={'placeholder': 'Describe your camp...', 'rows': 5}
     )
 
-    location = StringField(
-        'Location',
-        validators=[
-            DataRequired(message='Location is required'),
-            Length(max=255, message='Location must be less than 255 characters')
-        ],
-        render_kw={'placeholder': 'e.g., North Field, Section A'}
-    )
-
     max_sites = IntegerField(
         'Maximum Sites',
         validators=[

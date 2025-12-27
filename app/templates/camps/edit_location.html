@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Camp Location - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="bi bi-geo-alt display-3 text-primary"></i>
+                    <h2 class="mt-3">Edit Camp Location</h2>
+                    <p class="text-muted">
+                        {{ camp.name }} at {{ association.event.title }}
+                    </p>
+                </div>
+
+                <!-- Location Form -->
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Camp Location</label>
+                        <input type="text"
+                               name="location"
+                               id="location"
+                               class="form-control form-control-lg"
+                               value="{{ association.location or '' }}"
+                               placeholder="e.g., North Field, Section A, Site 42"
+                               maxlength="255">
+                        <div class="form-text">
+                            Specify where your camp will be located at this event
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <small>
+                            <strong><i class="bi bi-info-circle me-2"></i>Event Location:</strong>
+                            {{ association.event.location if association.event.location else 'Not specified' }}
+                        </small>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save me-2"></i>Save Location
+                        </button>
+                        <a href="{{ url_for('camps.view_camp', camp_id=camp.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Camp
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

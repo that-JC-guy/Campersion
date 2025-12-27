@@ -47,19 +47,6 @@
                         {% endif %}
                     </div>
 
-                    <!-- Location Field -->
-                    <div class="mb-3">
-                        <label for="location" class="form-label">Location</label>
-                        {{ form.location(class="form-control") }}
-                        {% if form.location.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.location.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
                     <!-- Capacity Fields -->
                     <div class="row">
                         <div class="col-md-6 mb-3">

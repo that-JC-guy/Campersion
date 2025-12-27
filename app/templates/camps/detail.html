@@ -35,12 +35,6 @@
                         <i class="bi bi-info-circle me-2"></i>Camp Information
                     </h5>
 
-                    <!-- Location -->
-                    <div class="mb-3">
-                        <h6><i class="bi bi-geo-alt me-2"></i>Location:</h6>
-                        <p>{{ camp.location }}</p>
-                    </div>
-
                     <!-- Capacity -->
                     <div class="mb-3">
                         <h6><i class="bi bi-people me-2"></i>Capacity:</h6>
@@ -239,7 +233,20 @@
                                                         - {{ association.event.end_date.strftime('%B %d, %Y') }}
                                                     {% endif %}
                                                     <br>
-                                                    <i class="bi bi-geo-alt"></i> {{ association.event.location if association.event.location else 'Location TBD' }}
+                                                    <i class="bi bi-geo-alt"></i> <strong>Event:</strong> {{ association.event.location if association.event.location else 'Location TBD' }}
+                                                    <br>
+                                                    <i class="bi bi-house-door"></i> <strong>Camp:</strong>
+                                                    {% if association.location %}
+                                                        {{ association.location }}
+                                                    {% else %}
+                                                        <span class="text-warning">Not set</span>
+                                                    {% endif %}
+                                                    {% if current_user.is_authenticated and current_user.is_camp_manager(camp.id) %}
+                                                        <a href="{{ url_for('camps.edit_camp_location', association_id=association.id) }}"
+                                                           class="ms-2" title="Edit camp location">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </a>
+                                                    {% endif %}
                                                 </small>
                                             </p>
                                             <a href="{{ url_for('events.view_event', event_id=association.event.id) }}"

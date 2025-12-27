@@ -48,7 +48,6 @@ def create_camp():
         camp = Camp(
             name=form.name.data,
             description=form.description.data,
-            location=form.location.data,
             max_sites=form.max_sites.data,
             max_people=form.max_people.data,
             has_communal_kitchen=form.has_communal_kitchen.data,
@@ -172,7 +171,6 @@ def edit_camp(camp_id):
     if request.method == 'GET':
         form.name.data = camp.name
         form.description.data = camp.description
-        form.location.data = camp.location
         form.max_sites.data = camp.max_sites
         form.max_people.data = camp.max_people
         form.has_communal_kitchen.data = camp.has_communal_kitchen
@@ -186,7 +184,6 @@ def edit_camp(camp_id):
     if form.validate_on_submit():
         camp.name = form.name.data
         camp.description = form.description.data
-        camp.location = form.location.data
         camp.max_sites = form.max_sites.data
         camp.max_people = form.max_people.data
         camp.has_communal_kitchen = form.has_communal_kitchen.data
@@ -628,6 +625,47 @@ def promote_member(camp_id, user_id):
 
     flash(f"Promoted {user.display_name} to camp manager.", 'success')
     return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+
+@camps_bp.route('/association/<int:association_id>/edit-location', methods=['GET', 'POST'])
+@login_required
+def edit_camp_location(association_id):
+    """
+    Edit camp location for a specific event association.
+
+    Camp managers can set/edit the camp's physical location for each event.
+
+    Args:
+        association_id: The ID of the CampEventAssociation
+
+    Returns:
+        On GET: Rendered form template
+        On POST: Redirect to camp detail with success message
+
+    Raises:
+        403: If user is not a camp manager or site admin
+    """
+    association = CampEventAssociation.query.get_or_404(association_id)
+    camp = association.camp
+
+    # Check permission: must be camp manager or site admin
+    if not current_user.is_site_admin_or_higher:
+        if not current_user.is_camp_manager(camp.id):
+            flash('Only camp managers can edit camp location.', 'error')
+            abort(403)
+
+    if request.method == 'POST':
+        location = request.form.get('location', '').strip()
+        association.location = location or None
+        db.session.commit()
+
+        flash(f'Camp location updated for {association.event.title}.', 'success')
+        return redirect(url_for('camps.view_camp', camp_id=camp.id))
+
+    # GET: render simple form
+    return render_template('camps/edit_location.html',
+                         association=association,
+                         camp=camp)
 
 
 @camps_bp.route('/<int:camp_id>/demote-manager/<int:user_id>', methods=['POST'])
