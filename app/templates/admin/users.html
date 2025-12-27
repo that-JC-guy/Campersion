@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-people-fill"></i> User Management</h1>
+                <p class="text-muted">Manage user roles and permissions</p>
+            </div>
+        </div>
+
+        <!-- Users Table Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3">User</th>
+                                <th class="py-3">Email</th>
+                                <th class="py-3">Role</th>
+                                <th class="py-3">Member Since</th>
+                                <th class="py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <!-- User Info with Profile Picture -->
+                                    <td class="px-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            {% if user.picture %}
+                                                <img src="{{ user.picture }}"
+                                                     alt="{{ user.name }}"
+                                                     class="rounded-circle me-2"
+                                                     style="width: 40px; height: 40px;">
+                                            {% else %}
+                                                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-person-fill"></i>
+                                                </div>
+                                            {% endif %}
+                                            <strong>{{ user.name }}</strong>
+                                        </div>
+                                    </td>
+
+                                    <!-- Email -->
+                                    <td class="py-3">{{ user.email }}</td>
+
+                                    <!-- Role Badge -->
+                                    <td class="py-3">
+                                        {% if user.role == UserRole.GLOBAL_ADMIN.value %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-shield-fill-exclamation"></i> {{ user.role_display_name }}
+                                            </span>
+                                        {% elif user.role == UserRole.SITE_ADMIN.value %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-shield-fill-check"></i> {{ user.role_display_name }}
+                                            </span>
+                                        {% elif user.role == UserRole.EVENT_MANAGER.value %}
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-calendar-event"></i> {{ user.role_display_name }}
+                                            </span>
+                                        {% elif user.role == UserRole.CAMP_MANAGER.value %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-house-check"></i> {{ user.role_display_name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-person"></i> {{ user.role_display_name }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Member Since -->
+                                    <td class="py-3">
+                                        <small class="text-muted">
+                                            {{ user.created_at.strftime('%b %d, %Y') }}
+                                        </small>
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td class="py-3 text-center">
+                                        {% if user.id != current_user.id %}
+                                            <a href="{{ url_for('admin.change_user_role', user_id=user.id) }}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil-square"></i> Change Role
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">
+                                                <small><i class="bi bi-person-badge"></i> You</small>
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <h3 class="text-primary">{{ users|length }}</h3>
+                        <p class="text-muted mb-0">Total Users</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 class="text-danger">
+                            {{ users|selectattr('role', 'equalto', UserRole.GLOBAL_ADMIN.value)|list|length }}
+                        </h3>
+                        <p class="text-muted mb-0">Global Admins</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 class="text-secondary">
+                            {{ users|selectattr('role', 'equalto', UserRole.MEMBER.value)|list|length }}
+                        </h3>
+                        <p class="text-muted mb-0">Members</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

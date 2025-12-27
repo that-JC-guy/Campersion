@@ -6,9 +6,9 @@ registration, login, password reset, and email verification.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
-from app.models import User
+from app.models import User, UserRole
 
 
 class RegistrationForm(FlaskForm):
@@ -147,3 +147,26 @@ class ResetPasswordForm(FlaskForm):
     )
 
     submit = SubmitField('Reset Password')
+
+
+class ChangeUserRoleForm(FlaskForm):
+    """
+    Form for global admins to change user roles.
+
+    Provides a dropdown to select from all available roles in the system.
+    Only accessible to global administrators.
+    """
+
+    role = SelectField(
+        'Role',
+        choices=[
+            (UserRole.GLOBAL_ADMIN.value, 'Global Admin'),
+            (UserRole.SITE_ADMIN.value, 'Site Admin'),
+            (UserRole.EVENT_MANAGER.value, 'Event Manager'),
+            (UserRole.CAMP_MANAGER.value, 'Camp Manager'),
+            (UserRole.MEMBER.value, 'Member')
+        ],
+        validators=[DataRequired(message='Please select a role')]
+    )
+
+    submit = SubmitField('Update Role')

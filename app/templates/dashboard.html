@@ -62,6 +62,12 @@
                                     </th>
                                     <td>{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}</td>
                                 </tr>
+                                <tr>
+                                    <th>
+                                        <i class="bi bi-shield-check me-2"></i>Role:
+                                    </th>
+                                    <td><span class="badge bg-primary">{{ user.role_display_name }}</span></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
