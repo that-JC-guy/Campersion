@@ -345,45 +345,81 @@ def edit_inventory(item_id):
     return render_template('inventory/form.html', form=form, title='Edit Item', item=item)
 
 
-@main_bp.route('/inventory/<int:item_id>/update-inline', methods=['POST'])
+@main_bp.route('/inventory/update-bulk', methods=['POST'])
 @login_required
-def update_inventory_inline(item_id):
+def update_inventory_bulk():
     """
-    Update inventory item inline (quantity and shared status only).
+    Update multiple inventory items and create new items in bulk.
 
-    Allows quick updates from the inventory list without full form.
-    Users can only update their own items.
-
-    Args:
-        item_id: ID of the inventory item to update
+    Processes all inventory updates and new item creation from the list view.
 
     Returns:
         Redirect to inventory list
     """
-    item = InventoryItem.query.get_or_404(item_id)
+    updates_count = 0
+    creates_count = 0
 
-    # Verify ownership
-    if item.user_id != current_user.id:
-        flash('You can only edit your own inventory items.', 'error')
-        return redirect(url_for('main.list_inventory'))
+    # Handle new item creation
+    new_item_name = request.form.get('new_item_name', '').strip()
+    if new_item_name:
+        try:
+            new_quantity = int(request.form.get('new_item_quantity', 1))
+            if new_quantity < 0:
+                flash('Quantity must be 0 or greater.', 'error')
+                return redirect(url_for('main.list_inventory'))
 
-    # Update quantity
-    try:
-        quantity = int(request.form.get('quantity', 0))
-        if quantity < 0:
-            flash('Quantity must be 0 or greater.', 'error')
+            new_item = InventoryItem(
+                user_id=current_user.id,
+                name=new_item_name,
+                quantity=new_quantity,
+                is_shared_gear='new_item_is_shared' in request.form
+            )
+            db.session.add(new_item)
+            creates_count += 1
+        except ValueError:
+            flash('Invalid quantity value for new item.', 'error')
             return redirect(url_for('main.list_inventory'))
-        item.quantity = quantity
-    except ValueError:
-        flash('Invalid quantity value.', 'error')
-        return redirect(url_for('main.list_inventory'))
 
-    # Update shared status
-    item.is_shared_gear = 'is_shared_gear' in request.form
+    # Handle existing item updates
+    item_ids = request.form.getlist('item_ids')
+    for item_id in item_ids:
+        item = InventoryItem.query.get(item_id)
+        if not item or item.user_id != current_user.id:
+            continue  # Skip items that don't exist or don't belong to user
+
+        try:
+            # Update quantity
+            quantity = int(request.form.get(f'quantity_{item_id}', 0))
+            if quantity < 0:
+                continue  # Skip invalid quantities
+
+            if item.quantity != quantity:
+                item.quantity = quantity
+                updates_count += 1
+
+            # Update shared status
+            is_shared = f'shared_{item_id}' in request.form
+            if item.is_shared_gear != is_shared:
+                item.is_shared_gear = is_shared
+                updates_count += 1
+
+        except ValueError:
+            continue  # Skip items with invalid data
 
     db.session.commit()
 
-    flash(f'"{item.name}" has been updated!', 'success')
+    # Build success message
+    messages = []
+    if creates_count > 0:
+        messages.append(f'{creates_count} item{"s" if creates_count != 1 else ""} created')
+    if updates_count > 0:
+        messages.append(f'{updates_count} change{"s" if updates_count != 1 else ""} saved')
+
+    if messages:
+        flash(' and '.join(messages).capitalize() + '!', 'success')
+    else:
+        flash('No changes to save.', 'info')
+
     return redirect(url_for('main.list_inventory'))
 
 
