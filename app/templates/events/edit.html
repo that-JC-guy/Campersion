@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Event - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <!-- Edit Event Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="bi bi-pencil-square display-3 text-primary"></i>
+                    <h2 class="mt-3">Edit Event</h2>
+                    <p class="text-muted">
+                        Update event details
+                    </p>
+                </div>
+
+                <!-- Event Form -->
+                <form method="POST" action="{{ url_for('events.edit_event', event_id=event.id) }}">
+                    {{ form.hidden_tag() }}
+
+                    <!-- Title Field -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Event Title</label>
+                        {{ form.title(class="form-control form-control-lg") }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description Field -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description(class="form-control") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Location Field -->
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        {{ form.location(class="form-control") }}
+                        {% if form.location.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.location.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Date Fields -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            {{ form.start_date(class="form-control") }}
+                            {% if form.start_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.start_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            {{ form.end_date(class="form-control") }}
+                            {% if form.end_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.end_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Contact Information Section -->
+                    <hr class="my-4">
+                    <h5 class="mb-3">Contact Information</h5>
+
+                    <!-- Event Manager -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="event_manager_email" class="form-label">Event Manager Email</label>
+                            {{ form.event_manager_email(class="form-control") }}
+                            {% if form.event_manager_email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.event_manager_email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="event_manager_phone" class="form-label">Event Manager Phone</label>
+                            {{ form.event_manager_phone(class="form-control") }}
+                            {% if form.event_manager_phone.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.event_manager_phone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Safety Manager -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="safety_manager_email" class="form-label">Safety Manager Email</label>
+                            {{ form.safety_manager_email(class="form-control") }}
+                            {% if form.safety_manager_email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.safety_manager_email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="safety_manager_phone" class="form-label">Safety Manager Phone</label>
+                            {{ form.safety_manager_phone(class="form-control") }}
+                            {% if form.safety_manager_phone.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.safety_manager_phone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Business Manager -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="business_manager_email" class="form-label">Business Manager Email</label>
+                            {{ form.business_manager_email(class="form-control") }}
+                            {% if form.business_manager_email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.business_manager_email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="business_manager_phone" class="form-label">Business Manager Phone</label>
+                            {{ form.business_manager_phone(class="form-control") }}
+                            {% if form.business_manager_phone.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.business_manager_phone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Board Email -->
+                    <div class="mb-3">
+                        <label for="board_email" class="form-label">Board of Directors Email</label>
+                        {{ form.board_email(class="form-control") }}
+                        {% if form.board_email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.board_email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('events.view_event', event_id=event.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Event
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

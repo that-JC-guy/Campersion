@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Events - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-calendar-event"></i> Events</h1>
+                <p class="text-muted">Manage events and approvals</p>
+            </div>
+            {% if current_user.has_role_or_higher('event manager') %}
+                <a href="{{ url_for('events.create_event') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Create Event
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Events Table Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3">Title</th>
+                                <th class="py-3">Location</th>
+                                <th class="py-3">Dates</th>
+                                <th class="py-3">Creator</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if events %}
+                                {% for event in events %}
+                                    <tr>
+                                        <!-- Event Title -->
+                                        <td class="px-4 py-3">
+                                            <strong>{{ event.title }}</strong>
+                                        </td>
+
+                                        <!-- Location -->
+                                        <td class="py-3">
+                                            {% if event.location %}
+                                                <small class="text-muted">
+                                                    <i class="bi bi-geo-alt"></i> {{ event.location }}
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">-</small>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Dates -->
+                                        <td class="py-3">
+                                            <small class="text-muted">
+                                                {{ event.start_date.strftime('%b %d') }}
+                                                {% if event.start_date != event.end_date %}
+                                                    - {{ event.end_date.strftime('%b %d, %Y') }}
+                                                {% else %}
+                                                    {{ event.start_date.strftime('%Y') }}
+                                                {% endif %}
+                                            </small>
+                                        </td>
+
+                                        <!-- Creator -->
+                                        <td class="py-3">
+                                            <small>{{ event.creator.name }}</small>
+                                        </td>
+
+                                        <!-- Status Badge -->
+                                        <td class="py-3">
+                                            {% if event.status == EventStatus.APPROVED.value %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> Approved
+                                                </span>
+                                            {% elif event.status == EventStatus.REJECTED.value %}
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-x-circle"></i> Rejected
+                                                </span>
+                                            {% elif event.status == EventStatus.CANCELLED.value %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-slash-circle"></i> Cancelled
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-clock"></i> Pending
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Action Buttons -->
+                                        <td class="py-3 text-center">
+                                            <a href="{{ url_for('events.view_event', event_id=event.id) }}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                            {% if current_user.is_authenticated %}
+                                                {% if event.creator_id == current_user.id or current_user.is_site_admin_or_higher %}
+                                                    <a href="{{ url_for('events.edit_event', event_id=event.id) }}"
+                                                       class="btn btn-sm btn-outline-secondary">
+                                                        <i class="bi bi-pencil-square"></i> Edit
+                                                    </a>
+                                                {% endif %}
+                                                {% if event.status == EventStatus.PENDING.value and current_user.is_site_admin_or_higher %}
+                                                    <form method="POST" action="{{ url_for('events.approve_event', event_id=event.id) }}" style="display:inline;">
+                                                        <button class="btn btn-sm btn-success" type="submit">
+                                                            <i class="bi bi-check"></i> Approve
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" action="{{ url_for('events.reject_event', event_id=event.id) }}" style="display:inline;">
+                                                        <button class="btn btn-sm btn-danger" type="submit">
+                                                            <i class="bi bi-x"></i> Reject
+                                                        </button>
+                                                    </form>
+                                                {% elif event.status == EventStatus.APPROVED.value and (event.creator_id == current_user.id or current_user.is_site_admin_or_higher) %}
+                                                    <form method="POST" action="{{ url_for('events.cancel_event', event_id=event.id) }}" style="display:inline;">
+                                                        <button class="btn btn-sm btn-warning" type="submit" onclick="return confirm('Are you sure you want to cancel this event?');">
+                                                            <i class="bi bi-slash-circle"></i> Cancel
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="bi bi-calendar-x display-4 text-muted"></i>
+                                        <p class="text-muted mt-3">No events found</p>
+                                        {% if current_user.has_role_or_higher('event manager') %}
+                                            <a href="{{ url_for('events.create_event') }}" class="btn btn-primary">
+                                                <i class="bi bi-plus-lg"></i> Create Your First Event
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
