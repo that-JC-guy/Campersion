@@ -9,7 +9,7 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.main import main_bp
 from app import db
-from app.models import InventoryItem, User
+from app.models import InventoryItem, User, CampMember, AssociationStatus
 from app.main.forms import ProfileForm, EmailChangeForm, InventoryItemForm
 from app.auth.email import send_email_change_verification
 
@@ -57,13 +57,29 @@ def view_profile():
     View user's own profile.
 
     Displays all profile information in read-only format,
-    including linked OAuth providers and account details.
+    including linked OAuth providers, account details, and camp memberships.
 
     Returns:
         Rendered profile view template
     """
     linked_providers = current_user.oauth_providers.all()
-    return render_template('profile/view.html', user=current_user, linked_providers=linked_providers)
+
+    # Get user's camp memberships
+    approved_camps = CampMember.query.filter_by(
+        user_id=current_user.id,
+        status=AssociationStatus.APPROVED.value
+    ).all()
+
+    pending_camps = CampMember.query.filter_by(
+        user_id=current_user.id,
+        status=AssociationStatus.PENDING.value
+    ).all()
+
+    return render_template('profile/view.html',
+                         user=current_user,
+                         linked_providers=linked_providers,
+                         approved_camps=approved_camps,
+                         pending_camps=pending_camps)
 
 
 @main_bp.route('/profile/edit', methods=['GET', 'POST'])

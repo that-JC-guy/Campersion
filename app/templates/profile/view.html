@@ -234,6 +234,74 @@
                 </table>
             </div>
         </div>
+
+        <!-- Camp Memberships Card -->
+        <div class="card shadow-lg mt-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-house-door me-2"></i>My Camps
+                </h5>
+
+                {% if approved_camps or pending_camps %}
+                    <!-- Approved Camps -->
+                    {% if approved_camps %}
+                        <h6 class="text-success mb-3">
+                            <i class="bi bi-check-circle me-2"></i>Active Memberships ({{ approved_camps|length }})
+                        </h6>
+                        <div class="list-group mb-4">
+                            {% for membership in approved_camps %}
+                                <a href="{{ url_for('camps.view_camp', camp_id=membership.camp.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ membership.camp.name }}</strong>
+                                            {% if membership.role == 'manager' %}
+                                                <span class="badge bg-primary ms-2">Manager</span>
+                                            {% endif %}
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar me-1"></i>Joined {{ membership.created_at.strftime('%B %d, %Y') }}
+                                            </small>
+                                        </div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Pending Camps -->
+                    {% if pending_camps %}
+                        <h6 class="text-warning mb-3">
+                            <i class="bi bi-hourglass-split me-2"></i>Pending Requests ({{ pending_camps|length }})
+                        </h6>
+                        <div class="list-group">
+                            {% for membership in pending_camps %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ membership.camp.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>Requested {{ membership.created_at.strftime('%B %d, %Y') }}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">Awaiting Approval</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-house-door display-4"></i>
+                        <p class="mt-2 mb-3">You're not a member of any camps yet</p>
+                        <a href="{{ url_for('camps.list_camps') }}" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Browse Camps
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
