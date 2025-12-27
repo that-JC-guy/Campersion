@@ -345,6 +345,48 @@ def edit_inventory(item_id):
     return render_template('inventory/form.html', form=form, title='Edit Item', item=item)
 
 
+@main_bp.route('/inventory/<int:item_id>/update-inline', methods=['POST'])
+@login_required
+def update_inventory_inline(item_id):
+    """
+    Update inventory item inline (quantity and shared status only).
+
+    Allows quick updates from the inventory list without full form.
+    Users can only update their own items.
+
+    Args:
+        item_id: ID of the inventory item to update
+
+    Returns:
+        Redirect to inventory list
+    """
+    item = InventoryItem.query.get_or_404(item_id)
+
+    # Verify ownership
+    if item.user_id != current_user.id:
+        flash('You can only edit your own inventory items.', 'error')
+        return redirect(url_for('main.list_inventory'))
+
+    # Update quantity
+    try:
+        quantity = int(request.form.get('quantity', 0))
+        if quantity < 0:
+            flash('Quantity must be 0 or greater.', 'error')
+            return redirect(url_for('main.list_inventory'))
+        item.quantity = quantity
+    except ValueError:
+        flash('Invalid quantity value.', 'error')
+        return redirect(url_for('main.list_inventory'))
+
+    # Update shared status
+    item.is_shared_gear = 'is_shared_gear' in request.form
+
+    db.session.commit()
+
+    flash(f'"{item.name}" has been updated!', 'success')
+    return redirect(url_for('main.list_inventory'))
+
+
 @main_bp.route('/inventory/<int:item_id>/delete', methods=['POST'])
 @login_required
 def delete_inventory(item_id):
