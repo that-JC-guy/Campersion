@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}403 Forbidden - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <!-- Error Icon -->
+        <div class="mb-4">
+            <i class="bi bi-shield-lock-fill text-danger" style="font-size: 6rem;"></i>
+        </div>
+
+        <!-- Error Message -->
+        <h1 class="display-4 mb-3">403 Forbidden</h1>
+        <h4 class="text-muted mb-4">Access Denied</h4>
+
+        <p class="lead mb-4">
+            You don't have permission to access this page.
+        </p>
+
+        <p class="text-muted mb-4">
+            This page requires specific permissions that your current role doesn't have.
+            If you believe this is an error, please contact your administrator.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                <i class="bi bi-house-door me-2"></i>
+                Go Home
+            </a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-person-circle me-2"></i>
+                    My Dashboard
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Login
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Help Text -->
+        <div class="alert alert-info mt-5" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <small>
+                <strong>Need Help?</strong> If you think you should have access to this page,
+                please contact a system administrator to review your account permissions.
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}

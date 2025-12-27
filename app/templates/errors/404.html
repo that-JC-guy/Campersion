@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}404 Not Found - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <!-- Error Icon -->
+        <div class="mb-4">
+            <i class="bi bi-compass text-warning" style="font-size: 6rem;"></i>
+        </div>
+
+        <!-- Error Message -->
+        <h1 class="display-4 mb-3">404 Not Found</h1>
+        <h4 class="text-muted mb-4">Page Not Found</h4>
+
+        <p class="lead mb-4">
+            The page you're looking for doesn't exist.
+        </p>
+
+        <p class="text-muted mb-4">
+            The page may have been moved, deleted, or the URL might be incorrect.
+            Double-check the address or use the links below to navigate.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                <i class="bi bi-house-door me-2"></i>
+                Go Home
+            </a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-person-circle me-2"></i>
+                    My Dashboard
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Login
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Help Text -->
+        <div class="alert alert-light mt-5" role="alert">
+            <i class="bi bi-lightbulb me-2"></i>
+            <small>
+                <strong>Tip:</strong> Make sure the URL is spelled correctly, or try using
+                the navigation menu to find what you're looking for.
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
