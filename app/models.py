@@ -129,7 +129,8 @@ class User(UserMixin, db.Model):
     # Extended profile information
     first_name = db.Column(db.String(100), nullable=True)
     last_name = db.Column(db.String(100), nullable=True)
-    preferred_name = db.Column(db.String(100), nullable=True)  # Optional display name/handle
+    preferred_name = db.Column(db.String(100), nullable=True)  # Preferred name/handle (primary display name)
+    show_full_name = db.Column(db.Boolean, default=False, nullable=False, server_default='false')  # Show full name instead of preferred name
     pronouns = db.Column(db.String(50), nullable=True)  # Optional pronouns (e.g., "she/her", "they/them")
 
     # Contact information
@@ -303,17 +304,24 @@ class User(UserMixin, db.Model):
     @property
     def display_name(self):
         """
-        Get user's preferred display name.
+        Get user's display name.
 
-        Priority order:
-        1. preferred_name (if set)
-        2. first_name (if set)
-        3. name (fallback for OAuth users or legacy data)
-        4. email (ultimate fallback)
+        If show_full_name is True and full name exists, returns full name.
+        Otherwise returns preferred name/handle with fallback hierarchy:
+        1. Full name (first + last) if show_full_name is True
+        2. preferred_name (if set)
+        3. first_name (if set)
+        4. name (fallback for OAuth users or legacy data)
+        5. email (ultimate fallback)
 
         Returns:
             str: User's display name
         """
+        # If user opted to show full name and it exists
+        if self.show_full_name and self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+
+        # Otherwise use preferred name/handle with fallbacks
         if self.preferred_name:
             return self.preferred_name
         if self.first_name:

@@ -39,12 +39,17 @@ class ProfileForm(FlaskForm):
     )
 
     preferred_name = StringField(
-        'Preferred Name (Optional)',
+        'Preferred Name/Handle',
         validators=[
-            Optional(),
+            DataRequired(message='Preferred name/handle is required'),
             Length(max=100, message='Preferred name must be less than 100 characters')
         ],
-        render_kw={'placeholder': 'Johnny'}
+        render_kw={'placeholder': 'Johnny, JDoe, etc.'}
+    )
+
+    show_full_name = BooleanField(
+        'Show my full name instead of preferred name/handle',
+        default=False
     )
 
     pronouns = StringField(

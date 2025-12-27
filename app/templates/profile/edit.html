@@ -45,15 +45,30 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="preferred_name" class="form-label">Preferred Name</label>
-                            {{ form.preferred_name(class="form-control") }}
-                            <small class="form-text text-muted">What you'd like to be called</small>
+                            <label for="preferred_name" class="form-label">Preferred Name/Handle *</label>
+                            {{ form.preferred_name(class="form-control" + (" is-invalid" if form.preferred_name.errors else "")) }}
+                            {% if form.preferred_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.preferred_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">This is what everyone will see by default</small>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label for="pronouns" class="form-label">Pronouns</label>
                             {{ form.pronouns(class="form-control") }}
                             <small class="form-text text-muted">e.g., she/her, he/him, they/them</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.show_full_name(class="form-check-input") }}
+                            <label class="form-check-label" for="show_full_name">
+                                {{ form.show_full_name.label.text }}
+                            </label>
+                            <small class="form-text text-muted d-block ms-4">When checked, others will see "{{ current_user.first_name }} {{ current_user.last_name }}" instead of your preferred name/handle</small>
                         </div>
                     </div>
                 </div>

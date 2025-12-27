@@ -46,23 +46,27 @@
                 <table class="table table-borderless">
                     <tbody>
                         <tr>
-                            <th style="width: 30%;">Display Name:</th>
-                            <td>{{ user.display_name }}</td>
-                        </tr>
-                        <tr>
-                            <th>First Name:</th>
+                            <th style="width: 30%;">First Name:</th>
                             <td>{{ user.first_name or '—' }}</td>
                         </tr>
                         <tr>
                             <th>Last Name:</th>
                             <td>{{ user.last_name or '—' }}</td>
                         </tr>
-                        {% if user.preferred_name %}
                         <tr>
-                            <th>Preferred Name:</th>
-                            <td>{{ user.preferred_name }}</td>
+                            <th>Preferred Name/Handle:</th>
+                            <td>{{ user.preferred_name or '—' }}</td>
                         </tr>
-                        {% endif %}
+                        <tr>
+                            <th>Display Setting:</th>
+                            <td>
+                                {% if user.show_full_name %}
+                                    <span class="badge bg-info">Showing full name ({{ user.first_name }} {{ user.last_name }})</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Showing preferred name/handle ({{ user.preferred_name or user.first_name }})</span>
+                                {% endif %}
+                            </td>
+                        </tr>
                         {% if user.pronouns %}
                         <tr>
                             <th>Pronouns:</th>

@@ -84,7 +84,8 @@ def edit_profile():
         # Update user profile
         current_user.first_name = form.first_name.data
         current_user.last_name = form.last_name.data
-        current_user.preferred_name = form.preferred_name.data or None
+        current_user.preferred_name = form.preferred_name.data
+        current_user.show_full_name = form.show_full_name.data
         current_user.pronouns = form.pronouns.data or None
 
         # Update contact info
@@ -109,6 +110,7 @@ def edit_profile():
         form.first_name.data = current_user.first_name
         form.last_name.data = current_user.last_name
         form.preferred_name.data = current_user.preferred_name
+        form.show_full_name.data = current_user.show_full_name
         form.pronouns.data = current_user.pronouns
         form.home_phone.data = current_user.home_phone
         form.mobile_phone.data = current_user.mobile_phone
