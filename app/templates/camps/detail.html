@@ -80,16 +80,69 @@
 
                 <hr>
 
+                <!-- Request to Join Event Form (for camp creator only) -->
+                {% if current_user.is_authenticated and camp.creator_id == current_user.id %}
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-plus-circle me-2"></i>Request to Join Event
+                        </h5>
+
+                        {% if approved_events|length > 0 %}
+                            <div class="card bg-light border-success">
+                                <div class="card-body">
+                                    <p class="mb-3"><strong>Select an event to request your camp to join:</strong></p>
+                                    <form method="POST" id="request-event-form">
+                                        <div class="row g-2">
+                                            <div class="col-md-8">
+                                                <select name="event_id" id="event_id" class="form-select" required>
+                                                    <option value="">Choose an event...</option>
+                                                    {% for event in approved_events %}
+                                                        <option value="{{ event.id }}">
+                                                            {{ event.title }} ({{ event.start_date.strftime('%B %d, %Y') }})
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="submit" class="btn btn-success w-100">
+                                                    <i class="bi bi-send me-1"></i> Send Request
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <script>
+                                        document.getElementById('request-event-form').addEventListener('submit', function(e) {
+                                            e.preventDefault();
+                                            const eventId = document.getElementById('event_id').value;
+                                            if (eventId) {
+                                                this.action = "{{ url_for('camps.request_event', camp_id=camp.id, event_id=0) }}".replace('/0', '/' + eventId);
+                                                this.submit();
+                                            }
+                                        });
+                                    </script>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>No events available:</strong> There are currently no approved events you can join. Check back later or ask an event manager to create and approve an event!
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+                {% endif %}
+
                 <!-- Associated Events -->
                 <div class="mb-4">
                     <h5 class="text-primary mb-3">
                         <i class="bi bi-calendar-event me-2"></i>Associated Events
                     </h5>
 
-                    {% set approved_events = camp.event_associations.filter_by(status=AssociationStatus.APPROVED.value).all() %}
-                    {% if approved_events %}
+                    {% set approved_associations = camp.event_associations.filter_by(status=AssociationStatus.APPROVED.value).all() %}
+                    {% if approved_associations %}
                         <div class="row">
-                            {% for association in approved_events %}
+                            {% for association in approved_associations %}
                                 <div class="col-md-6 mb-3">
                                     <div class="card">
                                         <div class="card-body">
@@ -118,56 +171,16 @@
                         <p class="text-muted">Not associated with any events yet.</p>
                     {% endif %}
 
-                    <!-- Request to Join Event (for camp creator only) -->
-                    {% if current_user.is_authenticated and camp.creator_id == current_user.id and approved_events|length > 0 or (current_user.is_authenticated and camp.creator_id == current_user.id and camp.event_associations.count() > 0) %}
-                        {% set pending_events = camp.event_associations.filter_by(status=AssociationStatus.PENDING.value).all() %}
-                        {% if pending_events %}
-                            <div class="alert alert-info mt-3" role="alert">
-                                <h6><i class="bi bi-clock-history me-2"></i>Pending Requests:</h6>
-                                <ul class="mb-0">
-                                    {% for association in pending_events %}
-                                        <li>{{ association.event.title }} - Awaiting approval</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    {% endif %}
-
-                    <!-- Request to Join Event Form -->
-                    {% if current_user.is_authenticated and camp.creator_id == current_user.id %}
-                        <div class="mt-3">
-                            {% if approved_events|length > 0 %}
-                                <form method="POST" id="request-event-form" class="d-inline-block">
-                                    <div class="input-group">
-                                        <select name="event_id" id="event_id" class="form-select" required>
-                                            <option value="">Select an event to join...</option>
-                                            {% for event in approved_events %}
-                                                <option value="{{ event.id }}">
-                                                    {{ event.title }} ({{ event.start_date.strftime('%B %d, %Y') }})
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="bi bi-plus-circle"></i> Request to Join
-                                        </button>
-                                    </div>
-                                </form>
-                                <script>
-                                    document.getElementById('request-event-form').addEventListener('submit', function(e) {
-                                        e.preventDefault();
-                                        const eventId = document.getElementById('event_id').value;
-                                        if (eventId) {
-                                            this.action = "{{ url_for('camps.request_event', camp_id=camp.id, event_id=0) }}".replace('/0', '/' + eventId);
-                                            this.submit();
-                                        }
-                                    });
-                                </script>
-                            {% else %}
-                                <p class="text-muted">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    No approved events available to join at this time.
-                                </p>
-                            {% endif %}
+                    <!-- Pending Requests -->
+                    {% set pending_events = camp.event_associations.filter_by(status=AssociationStatus.PENDING.value).all() %}
+                    {% if pending_events %}
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <h6><i class="bi bi-clock-history me-2"></i>Pending Requests:</h6>
+                            <ul class="mb-0">
+                                {% for association in pending_events %}
+                                    <li><strong>{{ association.event.title }}</strong> - Awaiting event creator approval</li>
+                                {% endfor %}
+                            </ul>
                         </div>
                     {% endif %}
                 </div>
