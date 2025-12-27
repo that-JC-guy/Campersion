@@ -11,7 +11,7 @@ from datetime import datetime
 from app.camps import camps_bp
 from app.camps.forms import CampForm
 from app import db
-from app.models import Camp, Event, CampEventAssociation, AssociationStatus, EventStatus
+from app.models import Camp, Event, CampEventAssociation, AssociationStatus, EventStatus, CampMember, CampMemberRole, MemberApprovalMode, User
 
 
 @camps_bp.route('/')
@@ -56,13 +56,26 @@ def create_camp():
             has_art_exhibits=form.has_art_exhibits.data,
             has_member_activities=form.has_member_activities.data,
             has_non_member_activities=form.has_non_member_activities.data,
+            member_approval_mode=form.member_approval_mode.data,
             creator_id=current_user.id
         )
 
         db.session.add(camp)
+        db.session.flush()  # Get camp.id before commit
+
+        # Auto-add creator as approved camp manager
+        creator_membership = CampMember(
+            camp_id=camp.id,
+            user_id=current_user.id,
+            status=AssociationStatus.APPROVED.value,
+            role=CampMemberRole.MANAGER.value,
+            requested_at=datetime.utcnow(),
+            approved_at=datetime.utcnow()
+        )
+        db.session.add(creator_membership)
         db.session.commit()
 
-        flash(f"Created camp '{camp.name}' successfully!", 'success')
+        flash(f"Created camp '{camp.name}' successfully! You are now a camp manager.", 'success')
         return redirect(url_for('camps.view_camp', camp_id=camp.id))
 
     return render_template('camps/create.html', form=form)
@@ -84,9 +97,9 @@ def view_camp(camp_id):
     """
     camp = Camp.query.get_or_404(camp_id)
 
-    # Get all approved events for the dropdown (if user is camp creator)
+    # Get all approved events for the dropdown (if user is camp manager)
     approved_events = []
-    if current_user.is_authenticated and camp.creator_id == current_user.id:
+    if current_user.is_authenticated and current_user.is_camp_manager(camp_id):
         # Get approved events that this camp hasn't requested yet
         existing_associations = camp.event_associations.with_entities(
             CampEventAssociation.event_id
@@ -98,9 +111,22 @@ def view_camp(camp_id):
             Event.id.notin_(existing_event_ids)
         ).order_by(Event.start_date.asc()).all()
 
-    return render_template('camps/detail.html', camp=camp,
+    # Get user's membership status
+    user_membership = None
+    if current_user.is_authenticated:
+        user_membership = camp.get_user_membership(current_user.id)
+
+    # Get pending request count for managers
+    pending_count = camp.camp_members.filter_by(status=AssociationStatus.PENDING.value).count()
+
+    return render_template('camps/detail.html',
+                         camp=camp,
                          approved_events=approved_events,
-                         AssociationStatus=AssociationStatus)
+                         user_membership=user_membership,
+                         pending_count=pending_count,
+                         AssociationStatus=AssociationStatus,
+                         CampMemberRole=CampMemberRole,
+                         MemberApprovalMode=MemberApprovalMode)
 
 
 @camps_bp.route('/<int:camp_id>/edit', methods=['GET', 'POST'])
@@ -142,6 +168,7 @@ def edit_camp(camp_id):
         form.has_art_exhibits.data = camp.has_art_exhibits
         form.has_member_activities.data = camp.has_member_activities
         form.has_non_member_activities.data = camp.has_non_member_activities
+        form.member_approval_mode.data = camp.member_approval_mode
 
     if form.validate_on_submit():
         camp.name = form.name.data
@@ -154,6 +181,7 @@ def edit_camp(camp_id):
         camp.has_art_exhibits = form.has_art_exhibits.data
         camp.has_member_activities = form.has_member_activities.data
         camp.has_non_member_activities = form.has_non_member_activities.data
+        camp.member_approval_mode = form.member_approval_mode.data
 
         db.session.commit()
 
@@ -344,3 +372,302 @@ def reject_camp(event_id, camp_id):
 
     flash(f"Rejected camp '{camp.name}' for event '{event.title}'.", 'error')
     return redirect(url_for('camps.event_camps', event_id=event_id))
+
+
+# ===== Camp Membership Management Routes =====
+
+
+@camps_bp.route('/<int:camp_id>/request-membership', methods=['POST'])
+@login_required
+def request_membership(camp_id):
+    """
+    Request to join a camp as a member.
+
+    Any authenticated user can request to join a camp. Creates a CampMember
+    record with PENDING status and MEMBER role (default).
+
+    Args:
+        camp_id: The ID of the camp to join.
+
+    Returns:
+        Redirect to camp detail with success/error message.
+    """
+    camp = Camp.query.get_or_404(camp_id)
+
+    # Check for existing membership/request
+    existing = CampMember.query.filter_by(
+        camp_id=camp_id,
+        user_id=current_user.id
+    ).first()
+
+    if existing:
+        if existing.is_approved:
+            flash(f"You are already a member of '{camp.name}'.", 'info')
+        elif existing.is_pending:
+            flash(f"You have already requested to join '{camp.name}'. Awaiting approval.", 'info')
+        else:  # rejected
+            flash(f"Your previous request to join '{camp.name}' was rejected.", 'error')
+        return redirect(url_for('camps.view_camp', camp_id=camp.id))
+
+    # Create pending membership request
+    membership = CampMember(
+        camp_id=camp_id,
+        user_id=current_user.id,
+        status=AssociationStatus.PENDING.value,
+        role=CampMemberRole.MEMBER.value
+    )
+
+    db.session.add(membership)
+    db.session.commit()
+
+    flash(f"Requested to join camp '{camp.name}'. Awaiting approval.", 'success')
+    return redirect(url_for('camps.view_camp', camp_id=camp.id))
+
+
+@camps_bp.route('/<int:camp_id>/members')
+@login_required
+def manage_members(camp_id):
+    """
+    View and manage camp member requests.
+
+    Camp managers (or all members, depending on settings) and site admins can
+    view and manage member requests. Shows pending, approved, and rejected members.
+
+    Args:
+        camp_id: The ID of the camp to manage members for.
+
+    Returns:
+        Rendered template with member requests categorized by status.
+
+    Raises:
+        403: If user doesn't have permission to manage members.
+    """
+    camp = Camp.query.get_or_404(camp_id)
+
+    # Check permissions
+    if not current_user.is_site_admin_or_higher:
+        if not current_user.can_approve_camp_members(camp_id):
+            flash('You do not have permission to manage members for this camp.', 'error')
+            abort(403)
+
+    # Get members by status
+    pending = camp.get_pending_requests()
+    managers = camp.get_managers()
+    regular_members = camp.camp_members.filter_by(
+        status=AssociationStatus.APPROVED.value,
+        role=CampMemberRole.MEMBER.value
+    ).all()
+    rejected = camp.camp_members.filter_by(status=AssociationStatus.REJECTED.value).all()
+
+    return render_template('camps/members.html',
+                         camp=camp,
+                         pending=pending,
+                         managers=managers,
+                         regular_members=regular_members,
+                         rejected=rejected,
+                         CampMemberRole=CampMemberRole,
+                         AssociationStatus=AssociationStatus)
+
+
+@camps_bp.route('/<int:camp_id>/approve-member/<int:user_id>', methods=['POST'])
+@login_required
+def approve_member(camp_id, user_id):
+    """
+    Approve a pending member request.
+
+    Users with approval permissions can approve pending member requests.
+    Updates status to APPROVED and sets approved_at timestamp.
+
+    Args:
+        camp_id: The ID of the camp.
+        user_id: The ID of the user to approve.
+
+    Returns:
+        Redirect to member management page with success/error message.
+
+    Raises:
+        403: If user doesn't have permission to approve members.
+    """
+    camp = Camp.query.get_or_404(camp_id)
+    user = User.query.get_or_404(user_id)
+
+    # Check permissions
+    if not current_user.is_site_admin_or_higher:
+        if not current_user.can_approve_camp_members(camp_id):
+            flash('You do not have permission to approve members for this camp.', 'error')
+            abort(403)
+
+    # Get the membership
+    membership = CampMember.query.filter_by(
+        camp_id=camp_id,
+        user_id=user_id
+    ).first_or_404()
+
+    # Validate status is pending
+    if not membership.is_pending:
+        flash('Can only approve pending requests.', 'error')
+        return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+    # Approve the membership
+    membership.status = AssociationStatus.APPROVED.value
+    membership.approved_at = datetime.utcnow()
+    db.session.commit()
+
+    flash(f"Approved {user.display_name}'s membership in '{camp.name}'.", 'success')
+    return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+
+@camps_bp.route('/<int:camp_id>/reject-member/<int:user_id>', methods=['POST'])
+@login_required
+def reject_member(camp_id, user_id):
+    """
+    Reject a pending member request.
+
+    Users with approval permissions can reject pending member requests.
+    Updates status to REJECTED.
+
+    Args:
+        camp_id: The ID of the camp.
+        user_id: The ID of the user to reject.
+
+    Returns:
+        Redirect to member management page with success/error message.
+
+    Raises:
+        403: If user doesn't have permission to reject members.
+    """
+    camp = Camp.query.get_or_404(camp_id)
+    user = User.query.get_or_404(user_id)
+
+    # Check permissions
+    if not current_user.is_site_admin_or_higher:
+        if not current_user.can_approve_camp_members(camp_id):
+            flash('You do not have permission to reject members for this camp.', 'error')
+            abort(403)
+
+    # Get the membership
+    membership = CampMember.query.filter_by(
+        camp_id=camp_id,
+        user_id=user_id
+    ).first_or_404()
+
+    # Validate status is pending
+    if not membership.is_pending:
+        flash('Can only reject pending requests.', 'error')
+        return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+    # Reject the membership
+    membership.status = AssociationStatus.REJECTED.value
+    db.session.commit()
+
+    flash(f"Rejected {user.display_name}'s membership request for '{camp.name}'.", 'error')
+    return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+
+@camps_bp.route('/<int:camp_id>/promote-member/<int:user_id>', methods=['POST'])
+@login_required
+def promote_member(camp_id, user_id):
+    """
+    Promote a regular member to camp manager.
+
+    Camp managers and site admins can promote approved members to manager role.
+    Changes role from MEMBER to MANAGER.
+
+    Args:
+        camp_id: The ID of the camp.
+        user_id: The ID of the user to promote.
+
+    Returns:
+        Redirect to member management page with success/error message.
+
+    Raises:
+        403: If user is not a camp manager or site admin.
+    """
+    camp = Camp.query.get_or_404(camp_id)
+    user = User.query.get_or_404(user_id)
+
+    # Check permissions: must be camp manager or site admin
+    if not current_user.is_site_admin_or_higher:
+        if not current_user.is_camp_manager(camp_id):
+            flash('Only camp managers can promote members.', 'error')
+            abort(403)
+
+    # Get the membership
+    membership = CampMember.query.filter_by(
+        camp_id=camp_id,
+        user_id=user_id
+    ).first_or_404()
+
+    # Validate member is approved
+    if not membership.is_approved:
+        flash('Can only promote approved members.', 'error')
+        return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+    # Check if already manager
+    if membership.is_manager:
+        flash(f"{user.display_name} is already a camp manager.", 'info')
+        return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+    # Promote to manager
+    membership.role = CampMemberRole.MANAGER.value
+    db.session.commit()
+
+    flash(f"Promoted {user.display_name} to camp manager.", 'success')
+    return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+
+@camps_bp.route('/<int:camp_id>/demote-manager/<int:user_id>', methods=['POST'])
+@login_required
+def demote_manager(camp_id, user_id):
+    """
+    Demote a camp manager to regular member.
+
+    Camp managers and site admins can demote managers to member role.
+    Changes role from MANAGER to MEMBER. Cannot demote if only one manager remains.
+
+    Args:
+        camp_id: The ID of the camp.
+        user_id: The ID of the user to demote.
+
+    Returns:
+        Redirect to member management page with success/error message.
+
+    Raises:
+        403: If user is not a camp manager or site admin.
+    """
+    camp = Camp.query.get_or_404(camp_id)
+    user = User.query.get_or_404(user_id)
+
+    # Check permissions: must be camp manager or site admin
+    if not current_user.is_site_admin_or_higher:
+        if not current_user.is_camp_manager(camp_id):
+            flash('Only camp managers can demote other managers.', 'error')
+            abort(403)
+
+    # Get the membership
+    membership = CampMember.query.filter_by(
+        camp_id=camp_id,
+        user_id=user_id
+    ).first_or_404()
+
+    # Validate member is approved manager
+    if not membership.is_manager:
+        flash(f"{user.display_name} is not a camp manager.", 'info')
+        return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+    # Check if this is the last manager
+    manager_count = camp.camp_members.filter_by(
+        status=AssociationStatus.APPROVED.value,
+        role=CampMemberRole.MANAGER.value
+    ).count()
+
+    if manager_count <= 1:
+        flash('Cannot demote the last camp manager. Promote another member first.', 'error')
+        return redirect(url_for('camps.manage_members', camp_id=camp_id))
+
+    # Demote to member
+    membership.role = CampMemberRole.MEMBER.value
+    db.session.commit()
+
+    flash(f"Demoted {user.display_name} to regular member.", 'success')
+    return redirect(url_for('camps.manage_members', camp_id=camp_id))
