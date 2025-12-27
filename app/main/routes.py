@@ -208,6 +208,33 @@ def verify_email_change(token):
     return redirect(url_for('main.view_profile'))
 
 
+@main_bp.route('/my-camps')
+@login_required
+def my_camps():
+    """
+    Display user's camp memberships.
+
+    Shows all camps where user is an approved member or has a pending request.
+
+    Returns:
+        Rendered my camps page with approved and pending memberships
+    """
+    # Get user's camp memberships
+    approved_camps = CampMember.query.filter_by(
+        user_id=current_user.id,
+        status=AssociationStatus.APPROVED.value
+    ).all()
+
+    pending_camps = CampMember.query.filter_by(
+        user_id=current_user.id,
+        status=AssociationStatus.PENDING.value
+    ).all()
+
+    return render_template('main/my_camps.html',
+                         approved_camps=approved_camps,
+                         pending_camps=pending_camps)
+
+
 # ========================================
 # Inventory Management Routes
 # ========================================
