@@ -11,7 +11,7 @@ from datetime import datetime
 from app.camps import camps_bp
 from app.camps.forms import CampForm
 from app import db
-from app.models import Camp, Event, CampEventAssociation, AssociationStatus, EventStatus, CampMember, CampMemberRole, MemberApprovalMode, User
+from app.models import Camp, Event, CampEventAssociation, AssociationStatus, EventStatus, CampMember, CampMemberRole, MemberApprovalMode, User, InventoryItem
 
 
 @camps_bp.route('/')
@@ -119,11 +119,22 @@ def view_camp(camp_id):
     # Get pending request count for managers
     pending_count = camp.camp_members.filter_by(status=AssociationStatus.PENDING.value).count()
 
+    # Get shared inventory from approved camp members
+    approved_member_ids = [m.user_id for m in camp.camp_members.filter_by(
+        status=AssociationStatus.APPROVED.value
+    ).all()]
+
+    shared_inventory = InventoryItem.query.filter(
+        InventoryItem.user_id.in_(approved_member_ids),
+        InventoryItem.is_shared_gear == True
+    ).order_by(InventoryItem.name.asc()).all() if approved_member_ids else []
+
     return render_template('camps/detail.html',
                          camp=camp,
                          approved_events=approved_events,
                          user_membership=user_membership,
                          pending_count=pending_count,
+                         shared_inventory=shared_inventory,
                          AssociationStatus=AssociationStatus,
                          CampMemberRole=CampMemberRole,
                          MemberApprovalMode=MemberApprovalMode)
