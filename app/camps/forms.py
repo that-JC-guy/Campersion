@@ -69,6 +69,11 @@ class CampForm(FlaskForm):
     has_art_exhibits = BooleanField('Art Exhibits')
     has_member_activities = BooleanField('Member Activities')
     has_non_member_activities = BooleanField('Non-Member Activities')
+    custom_amenities = StringField(
+        'Custom Amenities',
+        validators=[Length(max=500, message='Custom amenities must be less than 500 characters')],
+        render_kw={'placeholder': 'e.g., Hot Showers, WiFi, Bike Parking (comma separated)'}
+    )
 
     # Member approval mode
     member_approval_mode = SelectField(

@@ -123,6 +123,20 @@
                         </div>
                     </div>
 
+                    <!-- Custom Amenities Field -->
+                    <div class="mb-3">
+                        <label for="custom_amenities" class="form-label">{{ form.custom_amenities.label.text }}</label>
+                        {{ form.custom_amenities(class="form-control") }}
+                        <div class="form-text">Enter additional amenities separated by commas</div>
+                        {% if form.custom_amenities.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.custom_amenities.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
                     <!-- Member Approval Mode -->
                     <hr class="my-4">
                     <h5 class="mb-3">Member Management</h5>

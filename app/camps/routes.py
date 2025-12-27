@@ -56,6 +56,7 @@ def create_camp():
             has_art_exhibits=form.has_art_exhibits.data,
             has_member_activities=form.has_member_activities.data,
             has_non_member_activities=form.has_non_member_activities.data,
+            custom_amenities=form.custom_amenities.data or None,
             member_approval_mode=form.member_approval_mode.data,
             creator_id=current_user.id
         )
@@ -179,6 +180,7 @@ def edit_camp(camp_id):
         form.has_art_exhibits.data = camp.has_art_exhibits
         form.has_member_activities.data = camp.has_member_activities
         form.has_non_member_activities.data = camp.has_non_member_activities
+        form.custom_amenities.data = camp.custom_amenities
         form.member_approval_mode.data = camp.member_approval_mode
 
     if form.validate_on_submit():
@@ -192,6 +194,7 @@ def edit_camp(camp_id):
         camp.has_art_exhibits = form.has_art_exhibits.data
         camp.has_member_activities = form.has_member_activities.data
         camp.has_non_member_activities = form.has_non_member_activities.data
+        camp.custom_amenities = form.custom_amenities.data or None
         camp.member_approval_mode = form.member_approval_mode.data
 
         db.session.commit()

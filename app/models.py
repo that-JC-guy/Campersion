@@ -604,6 +604,7 @@ class Camp(db.Model):
     has_art_exhibits = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
     has_member_activities = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
     has_non_member_activities = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    custom_amenities = db.Column(db.Text, nullable=True)  # Comma-separated custom amenities
 
     # Member approval mode
     member_approval_mode = db.Column(db.String(20), nullable=False,
@@ -639,6 +640,10 @@ class Camp(db.Model):
             amenities.append('Member Activities')
         if self.has_non_member_activities:
             amenities.append('Non-Member Activities')
+        # Add custom amenities
+        if self.custom_amenities:
+            custom = [a.strip() for a in self.custom_amenities.split(',') if a.strip()]
+            amenities.extend(custom)
         return amenities
 
     def get_approved_members(self):
