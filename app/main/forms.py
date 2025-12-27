@@ -61,6 +61,11 @@ class ProfileForm(FlaskForm):
         render_kw={'placeholder': 'she/her, he/him, they/them, etc.'}
     )
 
+    show_pronouns = BooleanField(
+        'Display my pronouns with my name',
+        default=False
+    )
+
     # Phone fields - using Optional validator with Regexp for validation
     phone_regex = r'^[\d\s\-\(\)\+\.]+$'
     phone_message = 'Please enter a valid phone number'

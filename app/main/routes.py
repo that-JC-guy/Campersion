@@ -87,6 +87,7 @@ def edit_profile():
         current_user.preferred_name = form.preferred_name.data
         current_user.show_full_name = form.show_full_name.data
         current_user.pronouns = form.pronouns.data or None
+        current_user.show_pronouns = form.show_pronouns.data
 
         # Update contact info
         current_user.home_phone = form.home_phone.data or None
@@ -112,6 +113,7 @@ def edit_profile():
         form.preferred_name.data = current_user.preferred_name
         form.show_full_name.data = current_user.show_full_name
         form.pronouns.data = current_user.pronouns
+        form.show_pronouns.data = current_user.show_pronouns
         form.home_phone.data = current_user.home_phone
         form.mobile_phone.data = current_user.mobile_phone
         form.work_phone.data = current_user.work_phone

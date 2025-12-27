@@ -135,7 +135,11 @@ def view_camp(camp_id):
 
     for item in shared_items:
         grouped_inventory[item.name]['total_quantity'] += item.quantity
-        grouped_inventory[item.name]['owners'].append(item.owner.display_name)
+        # Build owner name with pronouns if enabled
+        owner_display = item.owner.display_name
+        if item.owner.show_pronouns and item.owner.pronouns:
+            owner_display = f"{owner_display} ({item.owner.pronouns})"
+        grouped_inventory[item.name]['owners'].append(owner_display)
         if item.description and item.description not in grouped_inventory[item.name]['descriptions']:
             grouped_inventory[item.name]['descriptions'].append(item.description)
 

@@ -132,6 +132,7 @@ class User(UserMixin, db.Model):
     preferred_name = db.Column(db.String(100), nullable=True)  # Preferred name/handle (primary display name)
     show_full_name = db.Column(db.Boolean, default=False, nullable=False, server_default='false')  # Show full name instead of preferred name
     pronouns = db.Column(db.String(50), nullable=True)  # Optional pronouns (e.g., "she/her", "they/them")
+    show_pronouns = db.Column(db.Boolean, default=False, nullable=False, server_default='false')  # Display pronouns with name
 
     # Contact information
     home_phone = db.Column(db.String(20), nullable=True)
@@ -329,6 +330,19 @@ class User(UserMixin, db.Model):
         if self.name:
             return self.name
         return self.email.split('@')[0]
+
+    @property
+    def display_name_with_pronouns(self):
+        """
+        Get user's display name with pronouns if enabled.
+
+        Returns:
+            str: Display name with pronouns appended if show_pronouns is True
+        """
+        name = self.display_name
+        if self.show_pronouns and self.pronouns:
+            return f"{name} ({self.pronouns})"
+        return name
 
     @property
     def full_name(self):

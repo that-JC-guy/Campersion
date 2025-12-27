@@ -26,7 +26,9 @@
 
                     <!-- Welcome Message and Edit Button -->
                     <div class="col-md-9">
-                        <h1 class="mb-2">Welcome, {{ user.display_name }}!</h1>
+                        <h1 class="mb-2">
+                            Welcome, {{ user.display_name }}{% if user.show_pronouns and user.pronouns %} <small class="text-muted">({{ user.pronouns }})</small>{% endif %}!
+                        </h1>
                         <p class="text-muted mb-3">Manage your profile and account settings</p>
                         <a href="{{ url_for('main.edit_profile') }}" class="btn btn-primary">
                             <i class="bi bi-pencil"></i> Edit Profile
@@ -71,6 +73,16 @@
                         <tr>
                             <th>Pronouns:</th>
                             <td>{{ user.pronouns }}</td>
+                        </tr>
+                        <tr>
+                            <th>Display Pronouns:</th>
+                            <td>
+                                {% if user.show_pronouns %}
+                                    <span class="badge bg-success">Yes - showing with name</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endif %}
                     </tbody>

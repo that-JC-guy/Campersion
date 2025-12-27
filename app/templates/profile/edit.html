@@ -71,6 +71,16 @@
                             <small class="form-text text-muted d-block ms-4">When checked, others will see "{{ current_user.first_name }} {{ current_user.last_name }}" instead of your preferred name/handle</small>
                         </div>
                     </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.show_pronouns(class="form-check-input") }}
+                            <label class="form-check-label" for="show_pronouns">
+                                {{ form.show_pronouns.label.text }}
+                            </label>
+                            <small class="form-text text-muted d-block ms-4">When checked, your pronouns will appear after your name in a smaller font (e.g., "John Doe <small>(he/him)</small>")</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
