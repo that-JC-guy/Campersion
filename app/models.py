@@ -102,6 +102,30 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(255), nullable=True)
     picture = db.Column(db.String(500), nullable=True)  # Profile picture URL from OAuth provider
 
+    # Extended profile information
+    first_name = db.Column(db.String(100), nullable=True)
+    last_name = db.Column(db.String(100), nullable=True)
+    preferred_name = db.Column(db.String(100), nullable=True)  # Optional display name/handle
+    pronouns = db.Column(db.String(50), nullable=True)  # Optional pronouns (e.g., "she/her", "they/them")
+
+    # Contact information
+    home_phone = db.Column(db.String(20), nullable=True)
+    mobile_phone = db.Column(db.String(20), nullable=True)
+    work_phone = db.Column(db.String(20), nullable=True)
+
+    # Address information
+    address_line1 = db.Column(db.String(255), nullable=True)
+    address_line2 = db.Column(db.String(255), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
+    state = db.Column(db.String(50), nullable=True)
+    zip_code = db.Column(db.String(20), nullable=True)
+    country = db.Column(db.String(100), nullable=False, default='US', server_default='US')
+
+    # Email change workflow (similar to password reset)
+    email_change_token = db.Column(db.String(100), unique=True, nullable=True)
+    email_change_new_email = db.Column(db.String(255), nullable=True)  # Store new email pending verification
+    email_change_sent_at = db.Column(db.DateTime, nullable=True)
+
     # Account metadata
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -200,6 +224,36 @@ class User(UserMixin, db.Model):
         expiry_time = sent_at + timedelta(hours=hours)
         return datetime.utcnow() < expiry_time
 
+    # Email change methods
+    def generate_email_change_token(self, new_email):
+        """
+        Generate a cryptographically secure email change verification token.
+
+        Args:
+            new_email (str): The new email address to change to
+
+        Returns:
+            str: The generated 32-byte hex token
+        """
+        self.email_change_token = secrets.token_hex(32)
+        self.email_change_new_email = new_email.lower()
+        self.email_change_sent_at = datetime.utcnow()
+        return self.email_change_token
+
+    def complete_email_change(self):
+        """
+        Complete the email change after successful verification.
+
+        Updates the user's email and clears the email change tokens.
+        """
+        if self.email_change_new_email:
+            self.email = self.email_change_new_email
+            self.email_change_token = None
+            self.email_change_new_email = None
+            self.email_change_sent_at = None
+            # Set email_verified=True since they just verified the new email
+            self.email_verified = True
+
     # Authentication method properties
     @property
     def has_password_auth(self):
@@ -220,6 +274,41 @@ class User(UserMixin, db.Model):
             bool: True if at least one OAuth provider is linked, False otherwise.
         """
         return self.oauth_providers.count() > 0
+
+    # Display name properties
+    @property
+    def display_name(self):
+        """
+        Get user's preferred display name.
+
+        Priority order:
+        1. preferred_name (if set)
+        2. first_name (if set)
+        3. name (fallback for OAuth users or legacy data)
+        4. email (ultimate fallback)
+
+        Returns:
+            str: User's display name
+        """
+        if self.preferred_name:
+            return self.preferred_name
+        if self.first_name:
+            return self.first_name
+        if self.name:
+            return self.name
+        return self.email.split('@')[0]
+
+    @property
+    def full_name(self):
+        """
+        Get user's full name.
+
+        Returns:
+            str: User's full name (first + last) or fallback to display_name
+        """
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.display_name
 
     # Role-based access control methods
     def has_role(self, role):
@@ -520,3 +609,42 @@ class CampEventAssociation(db.Model):
     def is_rejected(self):
         """Check if association is rejected."""
         return self.status == AssociationStatus.REJECTED.value
+
+
+class InventoryItem(db.Model):
+    """
+    Inventory item model for user gear and equipment.
+
+    Users can track their camping gear and equipment. Items are private
+    by default but can be marked as shared gear to be visible to others.
+    Inventory persists across camps and events - it belongs to the user.
+    """
+
+    __tablename__ = 'inventory_items'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign key to owner
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Item information
+    name = db.Column(db.String(255), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    description = db.Column(db.Text, nullable=True)
+
+    # Visibility flag - if True, other users can see this item
+    is_shared_gear = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
+                          onupdate=datetime.utcnow)
+
+    # Relationship to User
+    owner = db.relationship('User', backref=db.backref('inventory_items', lazy='dynamic',
+                                                        cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        """String representation of InventoryItem object."""
+        return f'<InventoryItem {self.name} (qty: {self.quantity})>'

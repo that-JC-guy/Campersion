@@ -119,3 +119,40 @@ def send_password_reset_email(user):
         recipients=[user.email],
         html_body=html_body
     )
+
+
+def send_email_change_verification(user, new_email):
+    """
+    Send email change verification link to new email address.
+
+    Generates a verification token and sends an email to the NEW address
+    that the user must click to verify they control that email.
+
+    Args:
+        user: User object requesting email change
+        new_email: New email address to verify
+    """
+    from app import db
+
+    # Generate email change token
+    token = user.generate_email_change_token(new_email)
+    db.session.commit()
+
+    # Build verification URL
+    verify_url = f"{current_app.config['OAUTH_REDIRECT_BASE']}/profile/verify-email-change/{token}"
+
+    # Render email template
+    html_body = render_template(
+        'emails/verify_email_change.html',
+        user=user,
+        new_email=new_email,
+        verify_url=verify_url,
+        expiry_hours=24
+    )
+
+    # Send email to NEW email address (not current)
+    send_email(
+        subject='Verify Your New Campersion Email Address',
+        recipients=[new_email],  # Important: send to NEW email
+        html_body=html_body
+    )
