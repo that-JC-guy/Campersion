@@ -259,7 +259,7 @@
                                             {% endif %}
                                             <br>
                                             <small class="text-muted">
-                                                <i class="bi bi-calendar me-1"></i>Joined {{ membership.created_at.strftime('%B %d, %Y') }}
+                                                <i class="bi bi-calendar me-1"></i>Joined {% if membership.approved_at %}{{ membership.approved_at.strftime('%B %d, %Y') }}{% else %}{{ membership.requested_at.strftime('%B %d, %Y') }}{% endif %}
                                             </small>
                                         </div>
                                         <i class="bi bi-chevron-right"></i>
@@ -282,7 +282,7 @@
                                             <strong>{{ membership.camp.name }}</strong>
                                             <br>
                                             <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>Requested {{ membership.created_at.strftime('%B %d, %Y') }}
+                                                <i class="bi bi-clock me-1"></i>Requested {{ membership.requested_at.strftime('%B %d, %Y') }}
                                             </small>
                                         </div>
                                         <span class="badge bg-warning text-dark">Awaiting Approval</span>
